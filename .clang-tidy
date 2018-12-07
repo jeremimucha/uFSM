@@ -1,0 +1,11 @@
+Checks: '*,
+-clang-diagnostic-c++98-compat,
+-clang-diagnostic-unknown-warning-option,
+-readability-named-parameter,
+-readability-implicit-bool-conversion,
+-google-readability-todo,
+-google-runtime-references,
+-fuchsia-overloaded-operator,
+-fuchsia-default-arguments,
+-llvm-include-order
+'
