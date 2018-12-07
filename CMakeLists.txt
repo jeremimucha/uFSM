@@ -248,12 +248,12 @@ foreach(Example ${ExamplesSrc})
         CXX_CPPCHECK "${Cppcheck}"
     )
     endif()
-    # if(CPP_USE_CLANGTIDY)
-    #     set_target_properties( ${ExampleName}
-    #         PROPERTIES
-    #         CXX_CLANG_TIDY "${Clangtidy}"
-    #     )
-    # endif()
+    if(CPP_USE_CLANGTIDY)
+        set_target_properties( ${ExampleName}
+            PROPERTIES
+            CXX_CLANG_TIDY "${Clangtidy}"
+        )
+    endif()
 endforeach()
 
 file( GLOB BenchmarksSrc
@@ -284,12 +284,12 @@ foreach(Benchmark ${BenchmarksSrc})
         CXX_CPPCHECK "${Cppcheck}"
     )
     endif()
-    # if(CPP_USE_CLANGTIDY)
-    #     set_target_properties( ${BenchmarkName}
-    #         PROPERTIES
-    #         CXX_CLANG_TIDY "${Clangtidy}"
-    #     )
-    # endif()
+    if(CPP_USE_CLANGTIDY)
+        set_target_properties( ${BenchmarkName}
+            PROPERTIES
+            CXX_CLANG_TIDY "${Clangtidy}"
+        )
+    endif()
 endforeach()
 ###############################################################################
 # Unit Tests

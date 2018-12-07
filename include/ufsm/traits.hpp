@@ -99,38 +99,6 @@ struct SelfT<FsmT, void_t<decltype(std::declval<FsmT>().self())>> {
 template<typename FsmT>
 using Self = typename SelfT<FsmT>::type;
 
-template<typename T, typename FsmT, typename = void_t<>>
-struct has_action : std::false_type { };
-template<typename T, typename FsmT>
-struct has_action<T, FsmT, void_t<decltype(std::declval<T>().action(std::declval<FsmT>()))>>
-: std::true_type { };
-template<typename T, typename FsmT>
-constexpr inline auto has_action_v{has_action<T,FsmT>::value};
-template<typename TTraits, typename FsmT>
-struct has_action_self : has_action<TTraits, decltype(std::declval<FsmT>().self())> { };
-template<typename TTraits, typename FsmT>
-constexpr inline auto has_action_self_v = has_action_self<TTraits,FsmT>::value;
-template<typename T, typename... Args>
-struct is_valid_action : std::is_invocable_r<void, T, Args...> { };
-template<typename T, typename... Args>
-constexpr inline auto is_valid_action_v{is_valid_action<T,Args...>::value};
-
-template<typename T, typename FsmT, typename = void_t<>>
-struct has_guard : std::false_type { };
-template<typename T, typename FsmT>
-struct has_guard<T, FsmT, void_t<decltype(std::declval<T>().guard)>>
-: std::is_invocable_r<bool, decltype(std::declval<T>().guard), FsmT> { };
-template<typename T, typename FsmT>
-constexpr inline auto has_guard_v{has_guard<T,FsmT>::value};
-template<typename TTraits, typename FsmT>
-struct has_guard_self : has_guard<TTraits, decltype(std::declval<FsmT>().self())> { };
-template<typename TTraits, typename FsmT>
-constexpr inline auto has_guard_self_v = has_guard_self<TTraits,FsmT>::value;
-template<typename T, typename... Args>
-struct is_valid_guard : std::is_invocable_r<bool, T, Args...> { };
-template<typename T, typename... Args>
-constexpr inline auto is_valid_guard_v{is_valid_guard<T,Args...>::value};
-
 template<typename T, typename = void_t<>>
 struct has_next_state : std::false_type { };
 template<typename T>
@@ -144,28 +112,6 @@ template<typename Traits>
 struct Next_stateT<Traits, true> { using type = typename std::decay_t<Traits>::next_state; };
 template<typename Traits>
 using Next_state = typename Next_stateT<Traits>::type;
-
-template<typename State, typename FsmT, typename = void_t<>>
-struct has_exit : std::false_type { };
-template<typename State, typename FsmT>
-struct has_exit<State, FsmT,
-    void_t<decltype(std::declval<State>().exit(std::declval<FsmT>()))>>
-    : std::true_type { };
-template<typename State, typename FsmT>
-constexpr inline auto has_exit_v{has_exit<State,FsmT>::value};
-template<typename State, typename FsmT>
-struct has_exit_self : has_exit<State, decltype(std::declval<FsmT>().self())> { };
-template<typename State, typename FsmT>
-constexpr inline auto has_exit_self_v = has_exit_self<State,FsmT>::value;
-
-template<typename State, typename FsmT, typename = void_t<>>
-struct has_entry : std::false_type { };
-template<typename State, typename FsmT>
-struct has_entry<State, FsmT,
-    void_t<decltype(std::declval<State>().entry(std::declval<FsmT>()))>>
-    : std::true_type { };
-template<typename State, typename FsmT>
-constexpr inline auto has_entry_v{has_entry<State,FsmT>::value};
 
 template<typename T, typename = void_t<>>
 struct has_logger : std::false_type { };
