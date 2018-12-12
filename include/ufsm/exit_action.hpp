@@ -5,7 +5,12 @@
 #include "traits.hpp"
 #include "logging.hpp"
 
-
+namespace ufsm
+{
+namespace back
+{
+namespace detail
+{
 template<typename State, typename FsmT, typename = void_t<>>
 struct has_exit : std::false_type { };
 
@@ -19,14 +24,18 @@ struct has_exit<State, FsmT,
 template<typename State, typename FsmT>
 constexpr inline auto has_exit_v{has_exit<State,FsmT>::value};
 
+} // namespace detail
 
 template<typename FsmT, typename State>
-constexpr inline std::enable_if_t<has_exit_v<State, Self<FsmT>>>
+constexpr inline std::enable_if_t<detail::has_exit_v<State, Self<FsmT>>>
 fsm_exit(FsmT&& fsm, State&& state) noexcept {
-    fsm_log_exit(fsm.self(), state);
+    logging::fsm_log_exit(fsm.self(), state);
     std::forward<State>(state).exit(std::forward<FsmT>(fsm).self());
 }
 
 template<typename FsmT, typename State>
-constexpr inline std::enable_if_t<!has_exit_v<State, Self<FsmT>>>
+constexpr inline std::enable_if_t<!detail::has_exit_v<State, Self<FsmT>>>
 fsm_exit(FsmT&&, State&&) noexcept {/* nop */}
+
+} // namespace back
+} // namespace ufsm

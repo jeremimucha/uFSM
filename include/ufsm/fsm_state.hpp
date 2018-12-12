@@ -4,6 +4,10 @@
 #include "traits.hpp"
 #include "get.hpp"
 
+namespace ufsm
+{
+namespace back
+{
 
 template<size_type Idx, typename State>
 class FsmState
@@ -76,3 +80,6 @@ inline constexpr decltype(auto) Get(FsmT&& fsm) noexcept
     return Get_impl<Idx>(std::forward<FsmT>(fsm));
 }
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+} // namespace back
+} // namespace ufsm

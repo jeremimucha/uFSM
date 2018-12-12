@@ -3,6 +3,11 @@
 #include <utility>
 #include "traits.hpp"
 
+namespace ufsm
+{
+namespace back
+{
+
 template<size_type Idx, typename FsmT>
 inline constexpr decltype(auto) Get(FsmT&& fsm) noexcept;
 
@@ -14,3 +19,6 @@ inline constexpr decltype(auto) Get(FsmT&& fsm) noexcept;
 
 template<size_type Idx, typename FsmT>
 using state_at = decltype( Get<Idx>(std::declval<FsmT>()) );
+
+} // namespace back
+} // namespace ufsm

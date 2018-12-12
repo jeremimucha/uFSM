@@ -5,6 +5,13 @@
 #include "traits.hpp"
 #include "logging.hpp"
 
+
+namespace ufsm
+{
+namespace back
+{
+namespace detail
+{
 template<typename State, typename FsmT, typename = void_t<>>
 struct has_entry : std::false_type { };
 
@@ -17,7 +24,7 @@ struct has_entry<State, FsmT,
 
 template<typename State, typename FsmT>
 constexpr inline auto has_entry_v{has_entry<State,FsmT>::value};
-
+} // namespace detail
 
 // template<typename FsmT, typename State>
 // constexpr inline std::enable_if_t<!has_entry_v<State, Self<FsmT>>>
@@ -28,13 +35,16 @@ constexpr inline auto has_entry_v{has_entry<State,FsmT>::value};
 // fsm_entry(FsmT&& fsm, State&& state) noexcept;
 
 template<typename FsmT, typename State>
-constexpr inline std::enable_if_t<!has_entry_v<State, Self<FsmT>>>
+constexpr inline std::enable_if_t<!detail::has_entry_v<State, Self<FsmT>>>
 fsm_entry(FsmT&&, State&&) noexcept {/* nop */}
 
 template<typename FsmT, typename State>
-constexpr inline std::enable_if_t<has_entry_v<State, Self<FsmT>>>
+constexpr inline std::enable_if_t<detail::has_entry_v<State, Self<FsmT>>>
 fsm_entry(FsmT&& fsm, State&& state) noexcept
 {
-    fsm_log_entry(fsm.self(), state);
+    logging::fsm_log_entry(fsm.self(), state);
     std::forward<State>(state).entry(std::forward<FsmT>(fsm).self());
 }
+
+} // namespace back
+} // namespace ufsm

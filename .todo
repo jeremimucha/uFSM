@@ -1,0 +1,18 @@
+# uFSM todolist
+
+cleanup:
+    [ ](A)  Implement separate wrappers for state, event and next-state for the front end
+    [ ]     Fix naming for consistency
+    [ ]     Potential refactoring - see if it's possible to get rid of CRTP
+
+features:
+    [ ]     Implement orthogonal regions
+
+examples:
+    [ ]     mooerfsm
+    [ ]     meley fsm
+    [ ]     button
+    [ ]     elevator
+
+benchmarks:
+    ?

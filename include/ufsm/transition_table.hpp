@@ -2,6 +2,8 @@
 
 #include "traits.hpp"
 
+namespace ufsm
+{
 
 template<typename State, typename Event, typename NextState = void,
          typename Guard = void, typename Action = void>
@@ -135,3 +137,5 @@ constexpr auto make_aentry(wrap_t<State>, wrap_t<Event>, wrap_t<NextState>,
 {
     return TransitionEntry<State,Event,NextState,void,Action>{std::move(action)};
 }
+
+} // namespace ufsm

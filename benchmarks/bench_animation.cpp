@@ -63,10 +63,10 @@ struct animation_logger {
     }
 };
 
-class Animation : public Fsm<Animation, sAnimating, sPaused, sIdle>
+class Animation : public ufsm::Fsm<Animation, sAnimating, sPaused, sIdle>
 {
 public:
-    using Base = Fsm<Animation, sAnimating, sPaused, sIdle>;
+    using Base = ufsm::Fsm<Animation, sAnimating, sPaused, sIdle>;
     using Base::Base;
 
     static constexpr inline animation_logger& logger() noexcept
@@ -98,6 +98,7 @@ public:
 
     /* static */ constexpr inline auto transition_table() noexcept
     {
+        using namespace ufsm;
         return make_transition_table(
             make_entry(wrap<sIdle>, wrap<ePlay>, wrap<sAnimating>, guard1{}, action1{}),
             make_entry(wrap<sAnimating>, wrap<eUpdate>, wrap<sIdle>)
@@ -167,54 +168,6 @@ struct testaction {
     }
 };
 
-using te1 = TransitionEntry<sIdle,ePlay,sAnimating,testguard1,testaction>;
-using te2 = TransitionEntry<sAnimating,eUpdate,sIdle,testguard1,void>;
-using te3 = TransitionEntry<sAnimating,ePause,sPaused,void,testaction>;
-
-static_assert(has_guard_v<te1,Animation&>);
-static_assert(has_guard_v<te2,Animation&>);
-static_assert(!has_guard_v<te3,Animation&>);
-static_assert(has_action_v<te1,Animation&>);
-static_assert(!has_action_v<te2,Animation&>);
-static_assert(has_action_v<te3,Animation&>);
-
-// template<typename Event>struct transition_table<sIdle,Event> { };
-// template<> struct transition_table<sIdle,ePlay> {
-//     using next_state = sAnimating;
-//     static inline const auto guard = [](Animation const&)noexcept {return true;};
-//     static inline const auto action = [](Animation const& fsm) noexcept {
-//         // std::cerr << "{sIdle->sAnimating}::action: " << fsm.counter << "\n";
-//     };
-// };
-
-// template<typename Event> struct transition_table<sAnimating,Event> { };
-// template<> struct transition_table<sAnimating,eUpdate> {
-//     using next_state = sIdle;
-//     static inline const auto guard =
-//         [limit=Animation::counter_limit](Animation const& fsm) noexcept {
-//             return fsm.counter >= limit;
-//         };
-// };
-// template<> struct transition_table<sAnimating,ePause> {
-//     using next_state = sPaused;
-// };
-// template<> struct transition_table<sAnimating,eStop> {
-//     using next_state = sIdle;
-// };
-
-// template<typename Event> struct transition_table<sPaused,Event> { };
-// template<> struct transition_table<sPaused,ePlay> {
-//     using next_state = sAnimating;
-//     static inline const auto action = [](Animation const& fsm){
-//         // std::cerr << "{sPaused->sAnimating}::action: " << fsm.counter << "\n";
-//     };
-// };
-// template<> struct transition_table<sPaused,eStop> {
-//     using next_state = sIdle;
-// };
-
-// using Animation = Fsm<sAnimating, sPaused, sIdle>;
-
 template<typename SM, typename... Events>
 inline void send_events(SM&& fsm, Events&&... events) noexcept
 {
@@ -243,7 +196,7 @@ int main()
     // auto animation = Animation{initial_state_v<sIdle>};  // set initial state on construction
     // std::cerr << "has_guard = " << has_guard_v<transition_table<sAnimating,eUpdate>> << "\n";
     auto animation = Animation{};
-    animation.set_initial_state(initial_state_v<sIdle>);    // or explicitly later
+    animation.set_initial_state(ufsm::initial_state_v<sIdle>);    // or explicitly later
 
     constexpr auto num_laps = 1'000'000u;
     auto sw = Stopwatch{"Animation"};

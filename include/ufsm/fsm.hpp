@@ -9,8 +9,12 @@
 #include "logging.hpp"
 
 
-/* Fsm */
-/* --------------------------------------------------------------------------------------------- */
+namespace ufsm
+{
+
+namespace back
+{
+
 template<typename IndexSequence, typename... States>
 class Fsm_impl;
 
@@ -58,12 +62,13 @@ private:
     size_type state_{};
 };
 
+} // namespace back
 
 template<typename Derived, typename... States>
-class Fsm : public Fsm_impl<Make_index_sequence<sizeof...(States)>, States...>
+class Fsm : public back::Fsm_impl<Make_index_sequence<sizeof...(States)>, States...>
 {
     using Indices = Make_index_sequence<sizeof...(States)>;
-    using Base = Fsm_impl<Indices, States...>;
+    using Base = back::Fsm_impl<Indices, States...>;
 public:
     constexpr Fsm() noexcept = default;
 
@@ -73,12 +78,12 @@ public:
 
     template<typename FsmT, typename Event, size_type Idx, size_type... Idxs>
     friend constexpr inline void
-    dispatch_event(FsmT&& fsm, Event&& event, Index_sequence<Idx,Idxs...>) noexcept;
+    ::ufsm::back::dispatch_event(FsmT&& fsm, Event&& event, Index_sequence<Idx,Idxs...>) noexcept;
 
     template<typename Event>
     constexpr inline void dispatch_event(Event&& event) noexcept
     {
-        ::dispatch_event(*this, std::forward<Event>(event), Indices{});
+        ::ufsm::back::dispatch_event(*this, std::forward<Event>(event), Indices{});
     }
 
     constexpr decltype(auto) transition_table() const noexcept { return derived().transition_table(); }
@@ -92,4 +97,6 @@ private:
     constexpr Derived const& derived() const& noexcept { return *static_cast<Derived const*>(this); }
     constexpr Derived&& derived() && noexcept { return *static_cast<Derived*>(this); }
 };
-/* --------------------------------------------------------------------------------------------- */
+
+
+} // namespace ufsm
