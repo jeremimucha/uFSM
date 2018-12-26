@@ -26,16 +26,41 @@ constexpr inline auto has_exit_v{has_exit<State,FsmT>::value};
 
 } // namespace detail
 
-template<typename FsmT, typename State>
-constexpr inline std::enable_if_t<detail::has_exit_v<State, Self<FsmT>>>
-fsm_exit(FsmT&& fsm, State&& state) noexcept {
-    logging::fsm_log_exit(fsm.self(), state);
-    std::forward<State>(state).exit(std::forward<FsmT>(fsm).self());
-}
+template<typename FsmT_, typename State_,
+         bool HasExit = detail::has_exit_v<State_, Self<FsmT_>>>
+struct FsmExit {
+    template<typename FsmT, typename State>
+    constexpr inline void operator()(FsmT&&, State&&) noexcept { }
+};
+
+template<typename FsmT_, typename State_>
+struct FsmExit<FsmT_, State_, true> {
+    template<typename FsmT, typename State>
+    constexpr inline void operator()(FsmT&& fsm, State&& state) noexcept
+    {
+        logging::fsm_log_exit(fsm.self(), state);
+        std::forward<State>(state).exit(std::forward<FsmT>(fsm).self());
+    }
+};
 
 template<typename FsmT, typename State>
-constexpr inline std::enable_if_t<!detail::has_exit_v<State, Self<FsmT>>>
-fsm_exit(FsmT&&, State&&) noexcept {/* nop */}
+constexpr inline void fsm_exit(FsmT&& fsm, State&& state) noexcept
+{
+    using fsm_t = std::decay_t<FsmT>;
+    using state_t = std::decay_t<State>;
+    FsmExit<fsm_t, state_t>{}(std::forward<FsmT>(fsm), std::forward<State>(state));
+}
+
+// template<typename FsmT, typename State>
+// constexpr inline std::enable_if_t<detail::has_exit_v<State, Self<FsmT>>>
+// fsm_exit(FsmT&& fsm, State&& state) noexcept {
+//     logging::fsm_log_exit(fsm.self(), state);
+//     std::forward<State>(state).exit(std::forward<FsmT>(fsm).self());
+// }
+
+// template<typename FsmT, typename State>
+// constexpr inline std::enable_if_t<!detail::has_exit_v<State, Self<FsmT>>>
+// fsm_exit(FsmT&&, State&&) noexcept {/* nop */}
 
 } // namespace back
 } // namespace ufsm

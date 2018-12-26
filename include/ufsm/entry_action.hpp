@@ -26,25 +26,42 @@ template<typename State, typename FsmT>
 constexpr inline auto has_entry_v{has_entry<State,FsmT>::value};
 } // namespace detail
 
-// template<typename FsmT, typename State>
-// constexpr inline std::enable_if_t<!has_entry_v<State, Self<FsmT>>>
-// fsm_entry(FsmT&&, State&&) noexcept;
+template<typename FsmT_, typename State_,
+         bool HasEntry = detail::has_entry_v<State_, Self<FsmT_>>>
+struct FsmEntry {
+    template<typename FsmT, typename State>
+    constexpr inline void operator()(FsmT&&, State&&) noexcept { }
+};
 
-// template<typename FsmT, typename State>
-// constexpr inline std::enable_if_t<has_entry_v<State, Self<FsmT>>>
-// fsm_entry(FsmT&& fsm, State&& state) noexcept;
+template<typename FsmT_, typename State_>
+struct FsmEntry<FsmT_, State_, true> {
+    template<typename FsmT, typename State>
+    constexpr inline void operator()(FsmT&& fsm, State&& state) noexcept
+    {
+        logging::fsm_log_entry(fsm.self(), state);
+        std::forward<State>(state).entry(std::forward<FsmT>(fsm).self());
+    }
+};
 
 template<typename FsmT, typename State>
-constexpr inline std::enable_if_t<!detail::has_entry_v<State, Self<FsmT>>>
-fsm_entry(FsmT&&, State&&) noexcept {/* nop */}
-
-template<typename FsmT, typename State>
-constexpr inline std::enable_if_t<detail::has_entry_v<State, Self<FsmT>>>
-fsm_entry(FsmT&& fsm, State&& state) noexcept
+constexpr inline void fsm_entry(FsmT&& fsm, State&& state) noexcept
 {
-    logging::fsm_log_entry(fsm.self(), state);
-    std::forward<State>(state).entry(std::forward<FsmT>(fsm).self());
+    using fsm_t = std::decay_t<FsmT>;
+    using state_t = std::decay_t<State>;
+    FsmEntry<fsm_t, state_t>{}(std::forward<FsmT>(fsm), std::forward<State>(state));
 }
+
+// template<typename FsmT, typename State>
+// constexpr inline std::enable_if_t<!detail::has_entry_v<State, Self<FsmT>>>
+// fsm_entry(FsmT&&, State&&) noexcept {/* nop */}
+
+// template<typename FsmT, typename State>
+// constexpr inline std::enable_if_t<detail::has_entry_v<State, Self<FsmT>>>
+// fsm_entry(FsmT&& fsm, State&& state) noexcept
+// {
+//     logging::fsm_log_entry(fsm.self(), state);
+//     std::forward<State>(state).entry(std::forward<FsmT>(fsm).self());
+// }
 
 } // namespace back
 } // namespace ufsm

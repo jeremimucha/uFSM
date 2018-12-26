@@ -20,12 +20,14 @@ struct sAnimating {
     // inline void handle_event(Animation&,Event) const noexcept;
 
     void entry(Animation const& fsm) const;
+    void exit(Animation const& fsm) const;
 };
 struct sPaused {
     // template<typename Event>
     // inline void handle_event(Animation&,Event) const noexcept;
 
     void entry(Animation const& fsm) const;
+    void exit(Animation const& fsm) const;
 };
 struct sIdle {
     // template<typename Event>
@@ -143,7 +145,7 @@ private:
     static inline animation_logger logger_{};
 };
 
-using statelist = ufsm::fsm_state_list_t<decltype(std::declval<Animation>().transition_table())>;
+using statelist = ufsm::detail::fsm_state_list_t<decltype(std::declval<Animation>().transition_table())>;
 // int test = statelist{};
 static_assert(count_v<statelist> == 3);
 
@@ -184,9 +186,17 @@ void sAnimating::entry(Animation const& fsm) const
     // std::cerr << "\tAnimating::entry, counter = " << fsm.counter << "\n";
 }
 
+void sAnimating::exit(Animation const&) const
+{
+}
+
 void sPaused::entry(Animation const& fsm) const
 {
     // std::cerr << "\tPaused::entry, counter = " << fsm.counter << "\n";
+}
+
+void sPaused::exit(Animation const&) const
+{
 }
 
 struct testguard1 {

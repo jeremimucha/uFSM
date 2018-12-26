@@ -16,7 +16,7 @@ private:
     State value_{};
 public:
     template<typename, typename...> friend class Fsm_impl;
-    template<typename, typename...> friend class Fsm;
+    template<typename, typename> friend class Fsm;
     using type = State;
 
     constexpr FsmState() noexcept = default;

@@ -162,26 +162,8 @@ constexpr auto make_aentry(detail::state_t<State>, detail::event_t<Event>,
     return TransitionEntry<State,Event,NextState,void,Action>{std::move(action)};
 }
 
-// template<typename TTraits, typename Statelist> struct fsm_state_list_impl;
-
-// template<template<typename...>class TTraits, typename T, typename... Ts, typename... States>
-// struct fsm_state_list_impl<TTraits<T,Ts...>, typelist<States...>>
-//     : std::conditional_t<contains_v<typelist<States...>, T::state_type>,
-//                          fsm_state_list_impl<TTraits<Ts...>,typelist<States...>>,
-//                          fsm_state_list_impl<TTraits<Ts...>,
-//                                           typelist<States..., T::state_type>>
-//                         >
-// {
-// };
-// template<template<typename...>class TTraits, typename... States>
-// struct fsm_state_list_impl<TTraits<>, typelist<States...>>
-// {
-//     using type = typelist<States...>;
-// };
-
-// template<typename TTraits>
-// using fsm_state_list = typename fsm_state_list_impl<TTraits, typelist<>>::type;
-
+namespace detail
+{
 
 template<typename Statelist, typename... Ts> struct build_state_list;
 
@@ -215,5 +197,7 @@ using fsm_state_list_t = typename fsm_state_list<TTraits>::type;
 
 template<typename SM>
 using get_fsm_state_list_t = fsm_state_list_t<decltype(std::declval<SM>().transition_table())>;
+
+} // namespace detail
 
 } // namespace ufsm
