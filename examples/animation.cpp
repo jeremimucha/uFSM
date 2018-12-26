@@ -77,11 +77,19 @@ struct animation_logger {
     }
 };
 
-class Animation : public ufsm::Fsm<Animation, sAnimating, sPaused, sIdle>
+template<typename L, typename... Ts> struct count;
+
+template<template<class...> class C, typename... Ts>
+struct count<C<Ts...>> { static constexpr inline auto value = sizeof...(Ts); };
+
+template<typename List>
+static constexpr inline auto count_v = count<List>::value;
+
+class Animation //: public ufsm::Fsm<Animation, sAnimating, sPaused, sIdle>
 {
 public:
-    using Base = ufsm::Fsm<Animation, sAnimating, sPaused, sIdle>;
-    using Base::Base;
+    // using Base = ufsm::Fsm<Animation, sAnimating, sPaused, sIdle>;
+    // using Base::Base;
 
     static constexpr inline animation_logger& logger() noexcept
     {
@@ -122,18 +130,22 @@ public:
     {
         using namespace ufsm;
         return make_transition_table(
-            make_entry(wrap<sIdle>, wrap<ePlay>, wrap<sAnimating>, guard1{}, action1{}),
-            make_entry(wrap<sAnimating>, wrap<eUpdate>, wrap<sIdle>)
+            make_entry(from_state<sIdle>, event<ePlay>, next_state<sAnimating>, guard1{}, action1{}),
+            make_entry(from_state<sAnimating>, event<eUpdate>, next_state<sIdle>)
                 .add_guard([](Animation const&)noexcept{return false;}),
-            make_entry(wrap<sAnimating>,wrap<ePause>,wrap<sPaused>),
-            make_entry(wrap<sAnimating>,wrap<eStop>,wrap<sIdle>),
-            make_entry(wrap<sPaused>,wrap<ePlay>,wrap<sAnimating>),
-            make_entry(wrap<sPaused>,wrap<eStop>,wrap<sIdle>)
+            make_entry(from_state<sAnimating>,event<ePause>,next_state<sPaused>),
+            make_entry(from_state<sAnimating>,event<eStop>,next_state<sIdle>),
+            make_entry(from_state<sPaused>,event<ePlay>,next_state<sAnimating>),
+            make_entry(from_state<sPaused>,event<eStop>,next_state<sIdle>)
         );
     }
 private:
     static inline animation_logger logger_{};
 };
+
+using statelist = ufsm::fsm_state_list_t<decltype(std::declval<Animation>().transition_table())>;
+// int test = statelist{};
+static_assert(count_v<statelist> == 3);
 
 template<typename State, typename Event>
 void animation_logger::log_event(Animation const& fsm, State const&, Event const&) const noexcept
@@ -224,7 +236,8 @@ inline void run_animation(T&& fsm) noexcept
 int main()
 {
     // auto animation = Animation{initial_state_v<sIdle>};  // set initial state on construction
-    auto animation = Animation{};
+    ufsm::Fsm<Animation> animation{};
+    // auto animation = Animation{};
     animation.set_initial_state(ufsm::initial_state_v<sIdle>);    // or explicitly later
     run_animation(animation);
 }

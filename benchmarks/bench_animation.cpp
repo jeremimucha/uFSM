@@ -63,11 +63,11 @@ struct animation_logger {
     }
 };
 
-class Animation : public ufsm::Fsm<Animation, sAnimating, sPaused, sIdle>
+class Animation //: public ufsm::Fsm<Animation, sAnimating, sPaused, sIdle>
 {
 public:
-    using Base = ufsm::Fsm<Animation, sAnimating, sPaused, sIdle>;
-    using Base::Base;
+    // using Base = ufsm::Fsm<Animation, sAnimating, sPaused, sIdle>;
+    // using Base::Base;
 
     static constexpr inline animation_logger& logger() noexcept
     {
@@ -100,13 +100,13 @@ public:
     {
         using namespace ufsm;
         return make_transition_table(
-            make_entry(wrap<sIdle>, wrap<ePlay>, wrap<sAnimating>, guard1{}, action1{}),
-            make_entry(wrap<sAnimating>, wrap<eUpdate>, wrap<sIdle>)
+            make_entry(from_state<sIdle>, event<ePlay>, next_state<sAnimating>, guard1{}, action1{}),
+            make_entry(from_state<sAnimating>, event<eUpdate>, next_state<sIdle>)
                 .add_guard([](Animation const&)noexcept{return false;}),
-            make_entry(wrap<sAnimating>,wrap<ePause>,wrap<sPaused>),
-            make_entry(wrap<sAnimating>,wrap<eStop>,wrap<sIdle>),
-            make_entry(wrap<sPaused>,wrap<ePlay>,wrap<sAnimating>),
-            make_entry(wrap<sPaused>,wrap<eStop>,wrap<sIdle>)
+            make_entry(from_state<sAnimating>,event<ePause>,next_state<sPaused>),
+            make_entry(from_state<sAnimating>,event<eStop>,next_state<sIdle>),
+            make_entry(from_state<sPaused>,event<ePlay>,next_state<sAnimating>),
+            make_entry(from_state<sPaused>,event<eStop>,next_state<sIdle>)
         );
     }
 private:
@@ -195,7 +195,8 @@ int main()
 {
     // auto animation = Animation{initial_state_v<sIdle>};  // set initial state on construction
     // std::cerr << "has_guard = " << has_guard_v<transition_table<sAnimating,eUpdate>> << "\n";
-    auto animation = Animation{};
+    // auto animation = Animation{};
+    ufsm::Fsm<Animation> animation{};
     animation.set_initial_state(ufsm::initial_state_v<sIdle>);    // or explicitly later
 
     constexpr auto num_laps = 1'000'000u;

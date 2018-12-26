@@ -2,7 +2,7 @@
 
 #include <type_traits>
 #include <utility>
-#include "transition_table.hpp"
+// #include "transition_table.hpp"
 
 
 namespace ufsm
@@ -28,6 +28,16 @@ template<typename T> struct identity { using type = T; };
 template<typename...> struct always_false : std::false_type { };
 template<typename... Ts> constexpr inline auto always_false_v{always_false<Ts...>::value};
 
+template<typename C, typename T> struct contains_impl;
+
+template<template<class...> class C, typename T, typename... Us>
+struct contains_impl<C<Us...>, T> : std::disjunction<std::is_same<T, Us>...> { };
+
+template<typename C, typename T>
+struct contains_t : contains_impl<C,T> { };
+
+template<typename C, typename T>
+static constexpr inline auto contains_v{contains_impl<C,T>::value};
 
 template<typename T> struct initial_state { };
 template<typename T> constexpr inline auto initial_state_v{initial_state<T>{}};
@@ -43,9 +53,22 @@ struct state_index<List<T,Ts...>, U, Idx>
 {
 };
 
-template<typename T> struct get_state_list { };
-template<template<class,class...>class FsmT, typename T, typename... States>
-struct get_state_list<FsmT<T, States...>> { using type = typelist<States...>; };
+template<typename T, typename = void_t<>> struct has_state_list : std::false_type { };
+template<typename T>
+struct has_state_list<T, void_t<typename T::Statelist>> : std::true_type { };
+template<typename T>
+constexpr inline auto has_state_list_v{has_state_list<T>::value};
+
+template<typename T> struct get_state_list;
+// {
+//     static_assert(HasStatelist, "Fsm must define a Statelist type");
+// };
+// template<template<class,class...>class FsmT, typename T, typename... States>
+// struct get_state_list<FsmT<T, States...>> { using type = typelist<States...>; };
+template<template<typename,typename>class FsmT, typename Impl, typename Statelist>
+struct get_state_list<FsmT<Impl, Statelist>> { using type = Statelist; };
+// template<typename T>
+// struct get_state_list<T,true> { using type = typename T::Statelist; };
 template<typename T>
 using get_state_list_t = typename get_state_list<T>::type;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <type_traits>
 #include "traits.hpp"
 
 namespace ufsm
@@ -8,6 +9,8 @@ namespace ufsm
 template<typename State, typename Event, typename NextState = void,
          typename Guard = void, typename Action = void>
 struct TransitionEntry {
+    using state_type = State;
+    using event_type = Event;
     using next_state = NextState;
     Guard guard{};
     Action action{};
@@ -15,6 +18,8 @@ struct TransitionEntry {
 
 template<typename State, typename Event, typename NextState>
 struct TransitionEntry<State, Event, NextState, void, void> {
+    using state_type = State;
+    using event_type = Event;
     using next_state = NextState;
     template<typename Action>
     constexpr inline auto add_action(Action&& action) noexcept
@@ -32,6 +37,8 @@ struct TransitionEntry<State, Event, NextState, void, void> {
 
 template<typename State, typename Event, typename NextState, typename Guard>
 struct TransitionEntry<State, Event, NextState, Guard, void> {
+    using state_type = State;
+    using event_type = Event;
     using next_state = NextState;
     Guard guard{};
     template<typename Action>
@@ -44,6 +51,8 @@ struct TransitionEntry<State, Event, NextState, Guard, void> {
 
 template<typename State, typename Event, typename NextState, typename Action>
 struct TransitionEntry<State, Event, NextState, void, Action> {
+    using state_type = State;
+    using event_type = Event;
     using next_state = NextState;
     Action action{};
     template<typename Guard>
@@ -58,6 +67,8 @@ struct TransitionEntry<State, Event, NextState, void, Action> {
 template<typename State, typename Event, typename Guard, typename Action>
 struct TransitionEntry<State, Event, void, Guard, Action>
 {
+    using state_type = State;
+    using event_type = Event;
     Guard guard{};
     Action action{};
 };
@@ -65,6 +76,8 @@ struct TransitionEntry<State, Event, void, Guard, Action>
 template<typename State, typename Event, typename Action>
 struct TransitionEntry<State, Event, void, void, Action>
 {
+    using state_type = State;
+    using event_type = Event;
     Action action{};
 };
 
@@ -77,7 +90,6 @@ struct TransitionEntry<State, Event, void, void, Action>
 template<typename... Entries>
 struct TransitionTraits : public Entries...
 {
-
 };
 
 template<typename State, typename Event, typename NextState, typename Guard, typename Action>
@@ -108,34 +120,100 @@ constexpr auto make_transition_table(Entries&&... entries) noexcept
     return TransitionTraits<Entries...>{std::forward<Entries>(entries)...};
 }
 
-template<typename T> struct wrap_t { using type = T; };
-template<typename T> constexpr inline auto wrap = wrap_t<T>{};
+namespace detail
+{
+// template<typename T> struct wrap_t { using type = T; };
+// template<typename T> constexpr inline auto wrap = wrap_t<T>{};
+template<typename T> struct state_t { using type = T; };
+template<typename T> struct event_t { using type = T; };
+template<typename T> struct next_state_t { using type = T; };
+} // namespace detail
+
+template<typename T> constexpr inline auto from_state = detail::state_t<T>{};
+template<typename T> constexpr inline auto event = detail::event_t<T>{};
+template<typename T> constexpr inline auto next_state = detail::next_state_t<T>{};
+
 
 template<typename State, typename Event, typename NextState, typename Guard, typename Action>
-constexpr auto make_entry(wrap_t<State>, wrap_t<Event>, wrap_t<NextState>,
-                          Guard guard, Action action) noexcept
+constexpr auto make_entry(detail::state_t<State>, detail::event_t<Event>,
+                          detail::next_state_t<NextState>, Guard guard, Action action) noexcept
 {
     return TransitionEntry<State,Event,NextState,Guard,Action>{std::move(guard), std::move(action)};
 }
 
 template<typename State, typename Event, typename NextState>
-constexpr auto make_entry(wrap_t<State>, wrap_t<Event>, wrap_t<NextState>) noexcept
+constexpr auto make_entry(detail::state_t<State>, detail::event_t<Event>,
+                          detail::next_state_t<NextState>) noexcept
 {
     return TransitionEntry<State,Event,NextState,void,void>{};
 }
 
 template<typename State, typename Event, typename NextState, typename Guard>
-constexpr auto make_gentry(wrap_t<State>, wrap_t<Event>, wrap_t<NextState>,
-                          Guard guard) noexcept
+constexpr auto make_gentry(detail::state_t<State>, detail::event_t<Event>,
+                           detail::next_state_t<NextState>, Guard guard) noexcept
 {
     return TransitionEntry<State,Event,NextState,Guard,void>{std::move(guard)};
 }
 
 template<typename State, typename Event, typename NextState, typename Action>
-constexpr auto make_aentry(wrap_t<State>, wrap_t<Event>, wrap_t<NextState>,
-                          Action action) noexcept
+constexpr auto make_aentry(detail::state_t<State>, detail::event_t<Event>,
+                           detail::next_state_t<NextState>, Action action) noexcept
 {
     return TransitionEntry<State,Event,NextState,void,Action>{std::move(action)};
 }
+
+// template<typename TTraits, typename Statelist> struct fsm_state_list_impl;
+
+// template<template<typename...>class TTraits, typename T, typename... Ts, typename... States>
+// struct fsm_state_list_impl<TTraits<T,Ts...>, typelist<States...>>
+//     : std::conditional_t<contains_v<typelist<States...>, T::state_type>,
+//                          fsm_state_list_impl<TTraits<Ts...>,typelist<States...>>,
+//                          fsm_state_list_impl<TTraits<Ts...>,
+//                                           typelist<States..., T::state_type>>
+//                         >
+// {
+// };
+// template<template<typename...>class TTraits, typename... States>
+// struct fsm_state_list_impl<TTraits<>, typelist<States...>>
+// {
+//     using type = typelist<States...>;
+// };
+
+// template<typename TTraits>
+// using fsm_state_list = typename fsm_state_list_impl<TTraits, typelist<>>::type;
+
+
+template<typename Statelist, typename... Ts> struct build_state_list;
+
+template<template<typename...>class Statelist, typename T, typename... Ts>
+struct build_state_list<Statelist<>, T, Ts...> : build_state_list<Statelist<T>, Ts...> { };
+
+template<template<typename...>class Statelist, typename T, typename... Ts, typename... Ss>
+struct build_state_list<Statelist<Ss...>, T, Ts...>
+    : std::conditional_t<contains_v<Statelist<Ss...>, T>,
+                         build_state_list<Statelist<Ss...>, Ts...>,
+                         build_state_list<Statelist<Ss...,T>, Ts...>
+                        >
+{
+};
+
+template<template<typename...>class Statelist, typename... Ss>
+struct build_state_list<Statelist<Ss...>>
+{
+    using type = Statelist<Ss...>;
+};
+
+template<typename TTraits> struct fsm_state_list;
+template<typename... Ts>
+struct fsm_state_list<TransitionTraits<Ts...>>
+    : build_state_list<typelist<>, typename Ts::state_type...>
+{
+};
+
+template<typename TTraits>
+using fsm_state_list_t = typename fsm_state_list<TTraits>::type;
+
+template<typename SM>
+using get_fsm_state_list_t = fsm_state_list_t<decltype(std::declval<SM>().transition_table())>;
 
 } // namespace ufsm

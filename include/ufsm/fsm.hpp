@@ -64,16 +64,18 @@ private:
 
 } // namespace back
 
-template<typename Derived, typename... States>
-class Fsm : public back::Fsm_impl<Make_index_sequence<sizeof...(States)>, States...>
+template<typename Impl, typename Statelist = get_fsm_state_list_t<Impl>> class Fsm;
+template<typename Impl, typename... States>
+class Fsm<Impl, typelist<States...>>
+    : public Impl, public back::Fsm_impl<Make_index_sequence<sizeof...(States)>, States...>
 {
     using Indices = Make_index_sequence<sizeof...(States)>;
     using Base = back::Fsm_impl<Indices, States...>;
 public:
+    // using Statelist = typelist<States...>;
     constexpr Fsm() noexcept = default;
 
     using Base::Base;
-
     using Base::set_initial_state;
 
     template<typename FsmT, typename Event, size_type Idx, size_type... Idxs>
@@ -86,16 +88,17 @@ public:
         ::ufsm::back::dispatch_event(*this, std::forward<Event>(event), Indices{});
     }
 
-    constexpr decltype(auto) transition_table() const noexcept { return derived().transition_table(); }
-    constexpr decltype(auto) transition_table() noexcept { return derived().transition_table(); }
-    constexpr decltype(auto) self() & noexcept { return derived(); }
-    constexpr decltype(auto) self() const& noexcept { return derived(); }
-    constexpr decltype(auto) self() && noexcept { return std::move(*this).derived(); }
-    constexpr decltype(auto) self() const&& noexcept { return std::move(*this).derived(); }
-private:
-    constexpr Derived& derived() & noexcept { return *static_cast<Derived*>(this); }
-    constexpr Derived const& derived() const& noexcept { return *static_cast<Derived const*>(this); }
-    constexpr Derived&& derived() && noexcept { return *static_cast<Derived*>(this); }
+    using Impl::transition_table;
+    // constexpr decltype(auto) transition_table() const noexcept { return derived().transition_table(); }
+    // constexpr decltype(auto) transition_table() noexcept { return derived().transition_table(); }
+    constexpr decltype(auto) self() & noexcept { return *this; }
+    constexpr decltype(auto) self() const& noexcept { return *this; }
+    constexpr decltype(auto) self() && noexcept { return std::move(*this); }
+    constexpr decltype(auto) self() const&& noexcept { return std::move(*this); }
+// private:
+    // constexpr Derived& derived() & noexcept { return *static_cast<Derived*>(this); }
+    // constexpr Derived const& derived() const& noexcept { return *static_cast<Derived const*>(this); }
+    // constexpr Derived&& derived() && noexcept { return *static_cast<Derived*>(this); }
 };
 
 
