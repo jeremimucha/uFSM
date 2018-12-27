@@ -52,7 +52,6 @@ dispatch_event(FsmT&& fsm, Event&& event, Index_sequence<Idx,Idxs...>) noexcept
         if constexpr (detail::has_handle_event_v<state_t, decltype(fsm.self()), Event>) {
             state.handle_event(fsm.self(), std::forward<Event>(event));
         }
-        // state_transition<event_t>(std::forward<FsmT>(fsm), std::forward<decltype(state)>(state));
         StateTransition<event_t, std::decay_t<FsmT>, state_t>{}(
             std::forward<FsmT>(fsm), std::forward<decltype(state)>(state));
     }

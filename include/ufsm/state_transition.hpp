@@ -71,7 +71,6 @@ struct StateTransition_impl<FsmT_, TTraits_, true, false> {
         const auto guard_result = ttraits.guard(fsm.self());
         logging::fsm_log_guard(fsm.self(), ttraits.guard, guard_result);
         if (guard_result) {
-            // FsmAction<FsmT,TTraits>{}(std::forward<FsmT>(fsm), std::forward<TTraits>(ttraits));
             fsm_action(std::forward<FsmT>(fsm), std::forward<TTraits>(ttraits));
         }
     }
@@ -86,16 +85,13 @@ struct StateTransition_impl<FsmT_, TTraits_, false, true> {
         using fsm_t = std::decay_t<FsmT>;
         using ttraits_t = std::decay_t<TTraits>;
         // using state_t = std::decay_t<State>;
-        // FsmExit<fsm_t, state_t>{}(fsm, state);
         fsm_exit(fsm, state);
-        // FsmAction<fsm_t, ttraits_t>{}(fsm, ttraits);
         fsm_action(fsm, ttraits);
         using fsm_statelist = get_state_list_t<fsm_t>;
         constexpr auto next_state_idx = state_index_v<fsm_statelist, Next_state<ttraits_t>>;
         fsm.state(next_state_idx);
         auto&& next_state = Get<next_state_idx>(fsm);
         logging::fsm_log_state_change(fsm.self(), state, next_state);
-        // FsmEntry<fsm_t,State>{}(std::forward<FsmT>(fsm), std::forward<decltype(next_state)>(next_state));
         fsm_entry(std::forward<FsmT>(fsm), std::forward<decltype(next_state)>(next_state));
     }
 };
@@ -110,16 +106,13 @@ struct StateTransition_impl<FsmT_, TTraits_, true, true> {
         const auto guard_result = ttraits.guard(fsm.self());
         logging::fsm_log_guard(fsm.self(), ttraits.guard, guard_result);
         if (guard_result) {
-            // FsmExit<FsmT_,State>{}(fsm, state);
             fsm_exit(fsm, state);
-            // FsmAction<FsmT_,TTraits>{}(fsm, ttraits);
             fsm_action(fsm, ttraits);
             using fsm_statelist = get_state_list_t<std::decay_t<FsmT>>;
             constexpr auto next_state_idx = state_index_v<fsm_statelist, Next_state<std::decay_t<TTraits>>>;
             fsm.state(next_state_idx);
             auto&& next_state = Get<next_state_idx>(fsm);
             logging::fsm_log_state_change(fsm.self(), state, next_state);
-            // FsmEntry<FsmT,State>{}(std::forward<FsmT>(fsm), std::forward<decltype(next_state)>(next_state));
             fsm_entry(std::forward<FsmT>(fsm), std::forward<decltype(next_state)>(next_state));
         }
     }
@@ -146,8 +139,6 @@ struct StateTransition<Event, FsmT_, State_, true> {
         StateTransition_impl<std::decay_t<FsmT>, std::decay_t<decltype(ttraits)>>{}(
             std::forward<FsmT>(fsm), std::forward<decltype(ttraits)>(ttraits),
             std::forward<State>(state));
-        // state_transition_impl(std::forward<FsmT>(fsm),
-        //     std::forward<decltype(ttraits)>(ttraits), std::forward<State>(state));
     }
 };
 

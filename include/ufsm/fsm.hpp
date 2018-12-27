@@ -72,7 +72,6 @@ class Fsm<Impl, typelist<States...>>
     using Indices = Make_index_sequence<sizeof...(States)>;
     using Base = back::Fsm_impl<Indices, States...>;
 public:
-    // using Statelist = typelist<States...>;
     constexpr Fsm() noexcept = default;
 
     using Base::Base;

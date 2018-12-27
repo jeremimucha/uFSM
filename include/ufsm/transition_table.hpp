@@ -192,11 +192,29 @@ struct fsm_state_list<TransitionTraits<Ts...>>
 {
 };
 
+template<typename FsmT, typename = void_t<>> struct has_transition_table : std::false_type { };
+template<typename FsmT>
+struct has_transition_table<FsmT, void_t<decltype(std::declval<FsmT>().transition_table())>>
+    : std::true_type
+{
+};
+
+template<typename FsmT>
+constexpr inline auto has_transition_table_v{has_transition_table<FsmT>::value};
+
 template<typename TTraits>
 using fsm_state_list_t = typename fsm_state_list<TTraits>::type;
 
 template<typename SM>
-using get_fsm_state_list_t = fsm_state_list_t<decltype(std::declval<SM>().transition_table())>;
+struct get_fsm_state_list {
+    static_assert(has_transition_table_v<SM>,
+    "A uFSM client class must implement `constexpr inline auto transition_table()` member function"
+    ", which constructs and returns a transition table via ufsm::make_transition_table");
+    using type = fsm_state_list_t<decltype(std::declval<SM>().transition_table())>;
+};
+
+template<typename SM>
+using get_fsm_state_list_t = typename get_fsm_state_list<SM>::type;
 
 } // namespace detail
 

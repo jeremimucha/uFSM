@@ -1,9 +1,9 @@
 # uFSM todolist
 
 cleanup:
-    [ ](A)  Implement separate wrappers for state, event and next-state for the front end
+    [x]     Implement separate wrappers for state, event and next-state for the front end
     [ ]     Fix naming for consistency
-    [ ]     Potential refactoring - see if it's possible to get rid of CRTP
+    [x]     Potential refactoring - see if it's possible to get rid of CRTP
                 * Type of the transition_table() should be inferable. A typelist could be
                 constructed based on the `State` of each transition_table entry - it would need to
                 be filtered on construction to ensure that each `State` type is inserted exactly
