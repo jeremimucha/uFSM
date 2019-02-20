@@ -32,7 +32,7 @@ constexpr inline auto is_valid_action_v{is_valid_action<T,Args...>::value};
 } // namespace detail
 
 template<typename FsmT_, typename TTraits_,
-         bool HasAction = detail::has_action_v<TTraits_, Self<FsmT_>>>
+         bool HasAction = detail::has_action_v<TTraits_, FsmT_>>
 struct FsmAction {
     template<typename FsmT, typename TTraits>
     constexpr inline void operator()(FsmT&&, TTraits&&) noexcept { }
@@ -43,9 +43,9 @@ struct FsmAction<FsmT_, TTraits_, true> {
     template<typename FsmT, typename TTraits>
     constexpr inline void operator()(FsmT&& fsm, TTraits&& ttraits) noexcept
     {
-        static_assert(detail::is_valid_action_v<decltype(ttraits.action), decltype(fsm.self())>);
-        logging::fsm_log_action(fsm.self(), ttraits.action);
-        std::forward<TTraits>(ttraits).action(std::forward<FsmT>(fsm).self());
+        static_assert(detail::is_valid_action_v<decltype(ttraits.action), decltype(fsm)>);
+        logging::fsm_log_action(fsm, ttraits.action);
+        std::forward<TTraits>(ttraits).action(std::forward<FsmT>(fsm));
     }
 };
 

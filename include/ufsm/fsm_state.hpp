@@ -44,13 +44,20 @@ using FsmState_t = typename FsmState<Idx,State>::type;
 /* Get */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 template<size_type Index, typename StateT>
-inline constexpr FsmState_t<Index,StateT>& Get_impl(FsmState<Index,StateT>& state) noexcept;
+    inline constexpr FsmState_t<Index,StateT>&
+Get_impl(FsmState<Index,StateT>& state) noexcept;
+
 template<size_type Index, typename StateT>
-inline constexpr FsmState_t<Index,StateT> const& Get_impl(FsmState<Index,StateT> const& state) noexcept;
+inline constexpr FsmState_t<Index,StateT> const&
+Get_impl(FsmState<Index,StateT> const& state) noexcept;
+
 template<size_type Index, typename StateT>
-inline constexpr FsmState_t<Index,StateT>&& Get_impl(FsmState<Index,StateT>&& state) noexcept;
+inline constexpr FsmState_t<Index,StateT>&&
+Get_impl(FsmState<Index,StateT>&& state) noexcept;
+
 template<size_type Index, typename StateT>
-inline constexpr FsmState_t<Index,StateT> const&& Get_impl(FsmState<Index,StateT> const&& state) noexcept;
+inline constexpr FsmState_t<Index,StateT> const&&
+Get_impl(FsmState<Index,StateT> const&& state) noexcept;
 
 
 template<size_type I, typename U>

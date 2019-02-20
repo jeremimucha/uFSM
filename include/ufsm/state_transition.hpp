@@ -50,7 +50,7 @@ constexpr inline auto HasTraitsFor_v = HasTraitsFor<FsmT,State,Event>::value;
 
 // -Guard, -NextState
 template<typename FsmT_, typename TTraits_,
-         bool HasGuard = detail::has_guard_v<TTraits_, Self<FsmT_>>,
+         bool HasGuard = detail::has_guard_v<TTraits_, FsmT_>,
          bool HasNextState = has_next_state_v<TTraits_>>
 struct StateTransition_impl {
     template<typename FsmT, typename TTraits, typename State>
@@ -67,9 +67,9 @@ struct StateTransition_impl<FsmT_, TTraits_, true, false> {
     template<typename FsmT, typename TTraits, typename State>
     constexpr inline void operator()(FsmT&& fsm, TTraits&& ttraits, State&&) noexcept
     {
-        static_assert(detail::is_valid_guard_v<decltype(ttraits.guard), decltype(fsm.self())>);
-        const auto guard_result = ttraits.guard(fsm.self());
-        logging::fsm_log_guard(fsm.self(), ttraits.guard, guard_result);
+        static_assert(detail::is_valid_guard_v<decltype(ttraits.guard), decltype(fsm)>);
+        const auto guard_result = ttraits.guard(fsm);
+        logging::fsm_log_guard(fsm, ttraits.guard, guard_result);
         if (guard_result) {
             fsm_action(std::forward<FsmT>(fsm), std::forward<TTraits>(ttraits));
         }
@@ -91,7 +91,7 @@ struct StateTransition_impl<FsmT_, TTraits_, false, true> {
         constexpr auto next_state_idx = state_index_v<fsm_statelist, Next_state<ttraits_t>>;
         fsm.state(next_state_idx);
         auto&& next_state = Get<next_state_idx>(fsm);
-        logging::fsm_log_state_change(fsm.self(), state, next_state);
+        logging::fsm_log_state_change(fsm, state, next_state);
         fsm_entry(std::forward<FsmT>(fsm), std::forward<decltype(next_state)>(next_state));
     }
 };
@@ -102,9 +102,9 @@ struct StateTransition_impl<FsmT_, TTraits_, true, true> {
     template<typename FsmT, typename TTraits, typename State>
     constexpr inline void operator()(FsmT&& fsm, TTraits&& ttraits, State&& state) noexcept
     {
-        static_assert(detail::is_valid_guard_v<decltype(ttraits.guard), decltype(fsm.self())>);
-        const auto guard_result = ttraits.guard(fsm.self());
-        logging::fsm_log_guard(fsm.self(), ttraits.guard, guard_result);
+        static_assert(detail::is_valid_guard_v<decltype(ttraits.guard), decltype(fsm)>);
+        const auto guard_result = ttraits.guard(fsm);
+        logging::fsm_log_guard(fsm, ttraits.guard, guard_result);
         if (guard_result) {
             fsm_exit(fsm, state);
             fsm_action(fsm, ttraits);
@@ -112,7 +112,7 @@ struct StateTransition_impl<FsmT_, TTraits_, true, true> {
             constexpr auto next_state_idx = state_index_v<fsm_statelist, Next_state<std::decay_t<TTraits>>>;
             fsm.state(next_state_idx);
             auto&& next_state = Get<next_state_idx>(fsm);
-            logging::fsm_log_state_change(fsm.self(), state, next_state);
+            logging::fsm_log_state_change(fsm, state, next_state);
             fsm_entry(std::forward<FsmT>(fsm), std::forward<decltype(next_state)>(next_state));
         }
     }

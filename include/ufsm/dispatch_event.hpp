@@ -48,9 +48,9 @@ dispatch_event(FsmT&& fsm, Event&& event, Index_sequence<Idx,Idxs...>) noexcept
         using state_t = std::decay_t<state_at<Idx, FsmT>>;
         using event_t = std::decay_t<Event>;
         auto&& state = Get<Idx>(fsm);
-        logging::fsm_log_event(fsm.self(), state, event);
-        if constexpr (detail::has_handle_event_v<state_t, decltype(fsm.self()), Event>) {
-            state.handle_event(fsm.self(), std::forward<Event>(event));
+        logging::fsm_log_event(fsm, state, event);
+        if constexpr (detail::has_handle_event_v<state_t, FsmT, Event>) {
+            state.handle_event(fsm, std::forward<Event>(event));
         }
         StateTransition<event_t, std::decay_t<FsmT>, state_t>{}(
             std::forward<FsmT>(fsm), std::forward<decltype(state)>(state));

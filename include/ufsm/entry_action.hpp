@@ -27,7 +27,7 @@ constexpr inline auto has_entry_v{has_entry<State,FsmT>::value};
 } // namespace detail
 
 template<typename FsmT_, typename State_,
-         bool HasEntry = detail::has_entry_v<State_, Self<FsmT_>>>
+         bool HasEntry = detail::has_entry_v<State_, FsmT_>>
 struct FsmEntry {
     template<typename FsmT, typename State>
     constexpr inline void operator()(FsmT&&, State&&) noexcept { }
@@ -38,8 +38,8 @@ struct FsmEntry<FsmT_, State_, true> {
     template<typename FsmT, typename State>
     constexpr inline void operator()(FsmT&& fsm, State&& state) noexcept
     {
-        logging::fsm_log_entry(fsm.self(), state);
-        std::forward<State>(state).entry(std::forward<FsmT>(fsm).self());
+        logging::fsm_log_entry(fsm, state);
+        std::forward<State>(state).entry(std::forward<FsmT>(fsm));
     }
 };
 

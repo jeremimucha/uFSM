@@ -64,7 +64,9 @@ private:
 
 } // namespace back
 
-template<typename Impl, typename Statelist = detail::get_fsm_state_list_t<Impl>> class Fsm;
+template<typename Impl, typename Statelist = detail::get_fsm_state_list_t<Impl>>
+class Fsm;
+
 template<typename Impl, typename... States>
 class Fsm<Impl, typelist<States...>>
     : public Impl, public back::Fsm_impl<Make_index_sequence<sizeof...(States)>, States...>

@@ -27,7 +27,7 @@ constexpr inline auto has_exit_v{has_exit<State,FsmT>::value};
 } // namespace detail
 
 template<typename FsmT_, typename State_,
-         bool HasExit = detail::has_exit_v<State_, Self<FsmT_>>>
+         bool HasExit = detail::has_exit_v<State_, FsmT_>>
 struct FsmExit {
     template<typename FsmT, typename State>
     constexpr inline void operator()(FsmT&&, State&&) noexcept { }
@@ -38,8 +38,8 @@ struct FsmExit<FsmT_, State_, true> {
     template<typename FsmT, typename State>
     constexpr inline void operator()(FsmT&& fsm, State&& state) noexcept
     {
-        logging::fsm_log_exit(fsm.self(), state);
-        std::forward<State>(state).exit(std::forward<FsmT>(fsm).self());
+        logging::fsm_log_exit(fsm, state);
+        std::forward<State>(state).exit(std::forward<FsmT>(fsm));
     }
 };
 

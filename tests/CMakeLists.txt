@@ -1,7 +1,6 @@
 cmake_minimum_required( VERSION 3.1 )
 
-set( TestProject "test_${Project}" )
-project( ${TestProject} )
+project( "test_${Project}" )
 
 
 ###############################################################################
@@ -41,6 +40,11 @@ target_link_libraries( ${PROJECT_NAME}
 ###############################################################################
 # CTest
 
-enable_testing()
-# gtest_discover_tests(${PROJECT_NAME})
-add_test(${PROJECT_NAME} ${PROJECT_NAME})
+# enable_testing()
+add_test(
+    ${PROJECT_NAME} ${PROJECT_NAME}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    )
+# gtest_discover_tests(${PROJECT_NAME} ${PROJECT_NAME}
+#     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+#     )
