@@ -14,6 +14,10 @@ class FsmState
 {
 private:
     State value_{};
+
+protected:
+    ~FsmState() noexcept = default;
+
 public:
     template<typename, typename...> friend class Fsm_impl;
     template<typename, typename> friend class Fsm;
@@ -25,7 +29,6 @@ public:
     constexpr FsmState(FsmState&&) noexcept = default;
     constexpr FsmState& operator=(FsmState const&) = default;
     constexpr FsmState& operator=(FsmState&&) noexcept = default;
-    ~FsmState() noexcept = default;
 
     template<typename U
         /* , typename = std::enable_if_t<!std::is_same_v<FsmState<...>,std::decay_t<U>>> */>

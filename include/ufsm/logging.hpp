@@ -139,44 +139,120 @@ return detail::get_type_name<T, 53>(
 
 /* log event */
 /* --------------------------------------------------------------------------------------------- */
-template<typename FsmT, typename State, typename Event>
-std::enable_if_t<detail::has_log_event_v<FsmT, State, Event>>
-fsm_log_event(FsmT const& fsm, State const& state, Event const& event) noexcept
+namespace detail
 {
-    FsmT::logger().log_event(fsm, state, event);
-}
+
+template<typename FsmT, typename State, typename Event, bool = has_log_event_v<FsmT, State, Event>>
+struct fsm_log_event_impl {
+    constexpr inline void operator()(FsmT const&, State const&, Event const&) const noexcept
+    { /* nop */ }
+};
 
 template<typename FsmT, typename State, typename Event>
-std::enable_if_t<!detail::has_log_event_v<FsmT, State, Event>>
-fsm_log_event(FsmT const&, State const&, Event const&) noexcept {/* nop */}
+struct fsm_log_event_impl<FsmT, State, Event, true> {
+    inline void operator()(FsmT const& fsm, State const& state, Event const& event) const
+    {
+        FsmT::logger().log_event(fsm, state, event);
+    }
+};
+
+} // detail
+
+template<typename FsmT, typename State, typename Event>
+constexpr inline void fsm_log_event(FsmT const& fsm, State const& state, Event const& event)
+{
+    detail::fsm_log_event_impl<FsmT, State, Event>{}(fsm, state, event);
+}
+
+// template<typename FsmT, typename State, typename Event>
+// std::enable_if_t<detail::has_log_event_v<FsmT, State, Event>>
+// fsm_log_event(FsmT const& fsm, State const& state, Event const& event) noexcept
+// {
+//     FsmT::logger().log_event(fsm, state, event);
+// }
+
+// template<typename FsmT, typename State, typename Event>
+// std::enable_if_t<!detail::has_log_event_v<FsmT, State, Event>>
+// fsm_log_event(FsmT const&, State const&, Event const&) noexcept {/* nop */}
 /* --------------------------------------------------------------------------------------------- */
 
 /* log event */
 /* --------------------------------------------------------------------------------------------- */
-template<typename FsmT, typename Guard/* , typename Event */>
-std::enable_if_t<detail::has_log_guard_v<FsmT, Guard/* , Event */>>
-fsm_log_guard(FsmT const& fsm, Guard const& guard, /* Event const& event, */ bool result) noexcept
+
+namespace detail
 {
-    FsmT::logger().log_guard(fsm, guard, /* event, */ result);
+
+template<typename FsmT, typename Guard, bool = has_log_guard_v<FsmT, Guard>>
+struct fsm_log_guard_impl {
+    constexpr inline void operator()(FsmT const&, Guard const&, bool) const noexcept { /* nop */ }
+};
+
+template<typename FsmT, typename Guard>
+struct fsm_log_guard_impl<FsmT, Guard, true> {
+    inline void operator()(FsmT const& fsm, Guard const& guard, bool result) const
+    {
+        FsmT::logger().log_guard(fsm, guard, result);
+    }
+};
+
+} // detail
+
+template<typename FsmT, typename Guard>
+constexpr inline void fsm_log_guard(FsmT const& fsm, Guard const& guard, bool result)
+{
+    detail::fsm_log_guard_impl<FsmT, Guard>{}(fsm, guard, result);
 }
 
-template<typename FsmT, typename Guard/* , typename Event */>
-std::enable_if_t<!detail::has_log_guard_v<FsmT, Guard/* , Event */>>
-fsm_log_guard(FsmT const&, Guard const&, /* Event const&, */ bool) noexcept {/* nop */}
+
+// template<typename FsmT, typename Guard/* , typename Event */>
+// std::enable_if_t<detail::has_log_guard_v<FsmT, Guard/* , Event */>>
+// fsm_log_guard(FsmT const& fsm, Guard const& guard, /* Event const& event, */ bool result) noexcept
+// {
+//     FsmT::logger().log_guard(fsm, guard, /* event, */ result);
+// }
+
+// template<typename FsmT, typename Guard/* , typename Event */>
+// std::enable_if_t<!detail::has_log_guard_v<FsmT, Guard/* , Event */>>
+// fsm_log_guard(FsmT const&, Guard const&, /* Event const&, */ bool) noexcept {/* nop */}
 /* --------------------------------------------------------------------------------------------- */
 
 
 /* --------------------------------------------------------------------------------------------- */
-template<typename FsmT, typename Action/* , typename Event */>
-std::enable_if_t<detail::has_log_action_v<FsmT, Action/* , Event */>>
-fsm_log_action(FsmT const& fsm, Action const& action/*,  Event const& event */) noexcept
+namespace detail
 {
-    FsmT::logger().log_action(fsm, action/* , event */);
+
+template<typename FsmT, typename Action, bool = has_log_action_v<FsmT, Action>>
+struct fsm_log_action_impl {
+    constexpr inline void operator()(FsmT const&, Action const&) const noexcept { /* nop */ }
+};
+
+template<typename FsmT, typename Action>
+struct fsm_log_action_impl<FsmT, Action, true> {
+    inline void operator()(FsmT const& fsm, Action const& action) const
+    {
+        FsmT::logger().log_action(fsm, action);
+    }
+};
+
+} // detail
+
+template<typename FsmT, typename Action>
+constexpr inline void fsm_log_action(FsmT const& fsm, Action const& action)
+{
+    detail::fsm_log_action_impl<FsmT, Action>{}(fsm, action);
 }
 
-template<typename FsmT, typename Action/* , typename Event */>
-std::enable_if_t<!detail::has_log_action_v<FsmT, Action/* , Event */>>
-fsm_log_action(FsmT const&, Action const&/* , Event const& */) noexcept {/* nop */}
+
+// template<typename FsmT, typename Action/* , typename Event */>
+// std::enable_if_t<detail::has_log_action_v<FsmT, Action/* , Event */>>
+// fsm_log_action(FsmT const& fsm, Action const& action/*,  Event const& event */) noexcept
+// {
+//     FsmT::logger().log_action(fsm, action/* , event */);
+// }
+
+// template<typename FsmT, typename Action/* , typename Event */>
+// std::enable_if_t<!detail::has_log_action_v<FsmT, Action/* , Event */>>
+// fsm_log_action(FsmT const&, Action const&/* , Event const& */) noexcept {/* nop */}
 /* --------------------------------------------------------------------------------------------- */
 
 
