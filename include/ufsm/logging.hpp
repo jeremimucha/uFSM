@@ -257,16 +257,46 @@ constexpr inline void fsm_log_action(FsmT const& fsm, Action const& action)
 
 
 /* --------------------------------------------------------------------------------------------- */
-template<typename FsmT, typename SrcState, typename DstState>
-std::enable_if_t<detail::has_log_state_change_v<FsmT, SrcState, DstState>>
-fsm_log_state_change(FsmT const& fsm, SrcState const& src_state, DstState const& dst_state) noexcept
+namespace detail
 {
-    FsmT::logger().log_state_change(fsm, src_state, dst_state);
-}
+
+template<typename FsmT, typename SrcState, typename DstState,
+         bool = has_log_state_change_v<FsmT, SrcState, DstState>>
+struct fsm_log_state_change_impl {
+    constexpr inline void operator()(FsmT const&, SrcState const&, DstState const&) const noexcept
+    {
+        /* nop */
+    }
+};
 
 template<typename FsmT, typename SrcState, typename DstState>
-std::enable_if_t<!detail::has_log_state_change_v<FsmT, SrcState, DstState>>
-fsm_log_state_change(FsmT const&, SrcState const&, DstState const&) noexcept {/* nop */}
+struct fsm_log_state_change_impl<FsmT, SrcState, DstState, true> {
+    inline void operator()(
+        FsmT const& fsm, SrcState const& src_state, DstState const& dst_state) const
+    {
+        FsmT::logger().log_state_change(fsm, src_state, dst_state);
+    }
+};
+
+}  // detail
+
+template<typename FsmT, typename SrcState, typename DstState>
+constexpr inline void fsm_log_state_change(
+    FsmT const& fsm, SrcState const& src_state, DstState const& dst_state)
+{
+    detail::fsm_log_state_change_impl<FsmT, SrcState, DstState>{}(fsm, src_state, dst_state);
+}
+
+// template<typename FsmT, typename SrcState, typename DstState>
+// std::enable_if_t<detail::has_log_state_change_v<FsmT, SrcState, DstState>>
+// fsm_log_state_change(FsmT const& fsm, SrcState const& src_state, DstState const& dst_state) noexcept
+// {
+//     FsmT::logger().log_state_change(fsm, src_state, dst_state);
+// }
+
+// template<typename FsmT, typename SrcState, typename DstState>
+// std::enable_if_t<!detail::has_log_state_change_v<FsmT, SrcState, DstState>>
+// fsm_log_state_change(FsmT const&, SrcState const&, DstState const&) noexcept {/* nop */}
 /* --------------------------------------------------------------------------------------------- */
 
 
