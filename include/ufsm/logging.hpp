@@ -301,30 +301,82 @@ constexpr inline void fsm_log_state_change(
 
 
 /* --------------------------------------------------------------------------------------------- */
-template<typename FsmT, typename State>
-std::enable_if_t<detail::has_log_exit_v<FsmT, State>>
-fsm_log_exit(FsmT const& fsm, State const& state) noexcept
+namespace detail
 {
-    FsmT::logger().log_exit(fsm, state);
-}
+
+template<typename FsmT, typename State, bool = has_log_exit_v<FsmT, State>>
+struct fsm_log_exit_impl {
+    constexpr inline void operator()(FsmT const&, State const&) const noexcept { /* nop */ }
+};
 
 template<typename FsmT, typename State>
-std::enable_if_t<!detail::has_log_exit_v<FsmT, State>>
-fsm_log_exit(FsmT const&, State const&) noexcept {/* nop */}
+struct fsm_log_exit_impl<FsmT, State, true> {
+    inline void operator()(FsmT const& fsm, State const& state) const
+        noexcept(std::is_nothrow_invocable_v<decltype(FsmT::logger().log_exit(fsm, state))>)
+    {
+        FsmT::logger().log_exit(fsm, state);
+    }
+};
+
+} // detail
+
+template<typename FsmT, typename State>
+constexpr inline void fsm_log_exit(FsmT const& fsm, State const& state)
+    noexcept(std::is_nothrow_invocable_v<
+        detail::fsm_log_exit_impl<FsmT, State>, FsmT const&, State const&>)
+{
+    detail::fsm_log_exit_impl<FsmT, State>{}(fsm, state);
+}
+
+
+// template<typename FsmT, typename State>
+// std::enable_if_t<detail::has_log_exit_v<FsmT, State>>
+// fsm_log_exit(FsmT const& fsm, State const& state) noexcept
+// {
+//     FsmT::logger().log_exit(fsm, state);
+// }
+
+// template<typename FsmT, typename State>
+// std::enable_if_t<!detail::has_log_exit_v<FsmT, State>>
+// fsm_log_exit(FsmT const&, State const&) noexcept {/* nop */}
 /* --------------------------------------------------------------------------------------------- */
 
 
 /* --------------------------------------------------------------------------------------------- */
-template<typename FsmT, typename State>
-std::enable_if_t<detail::has_log_entry_v<FsmT, State>>
-fsm_log_entry(FsmT const& fsm, State const& state) noexcept
+namespace detail
 {
-    FsmT::logger().log_entry(fsm, state);
-}
+
+template<typename FsmT, typename State, bool = has_log_entry_v<FsmT, State>>
+struct fsm_log_entry_impl {
+    constexpr inline void operator()(FsmT const&, State const&) const noexcept { /* nop */ }
+};
 
 template<typename FsmT, typename State>
-std::enable_if_t<!detail::has_log_entry_v<FsmT, State>>
-fsm_log_entry(FsmT const&, State const&) noexcept {/* nop */}
+struct fsm_log_entry_impl<FsmT, State, true> {
+    inline void operator()(FsmT const& fsm, State const& state) const
+    {
+        FsmT::logger().log_entry(fsm, state);
+    }
+};
+
+} // detail
+
+template<typename FsmT, typename State>
+constexpr inline void fsm_log_entry(FsmT const& fsm, State const& state)
+{
+    detail::fsm_log_entry_impl<FsmT, State>{}(fsm, state);
+}
+
+// template<typename FsmT, typename State>
+// std::enable_if_t<detail::has_log_entry_v<FsmT, State>>
+// fsm_log_entry(FsmT const& fsm, State const& state) noexcept
+// {
+//     FsmT::logger().log_entry(fsm, state);
+// }
+
+// template<typename FsmT, typename State>
+// std::enable_if_t<!detail::has_log_entry_v<FsmT, State>>
+// fsm_log_entry(FsmT const&, State const&) noexcept {/* nop */}
 /* --------------------------------------------------------------------------------------------- */
 
 
