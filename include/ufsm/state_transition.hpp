@@ -56,7 +56,7 @@ struct StateTransition_impl {
     template<typename FsmT, typename TTraits, typename State>
     constexpr inline void operator()(FsmT&& fsm, TTraits&& traits, State&&) noexcept
     {
-        FsmAction<FsmT,TTraits>{}(std::forward<FsmT>(fsm), std::forward<TTraits>(traits));
+        // FsmAction<FsmT,TTraits>{}(std::forward<FsmT>(fsm), std::forward<TTraits>(traits));
         fsm_action(std::forward<FsmT>(fsm), std::forward<TTraits>(traits));
     }
 };

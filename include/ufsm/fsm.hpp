@@ -92,10 +92,10 @@ public:
     using Impl::transition_table;
     // constexpr decltype(auto) transition_table() const noexcept { return derived().transition_table(); }
     // constexpr decltype(auto) transition_table() noexcept { return derived().transition_table(); }
-    constexpr decltype(auto) self() & noexcept { return *this; }
-    constexpr decltype(auto) self() const& noexcept { return *this; }
-    constexpr decltype(auto) self() && noexcept { return std::move(*this); }
-    constexpr decltype(auto) self() const&& noexcept { return std::move(*this); }
+    // constexpr decltype(auto) self() & noexcept { return *this; }
+    // constexpr decltype(auto) self() const& noexcept { return *this; }
+    // constexpr decltype(auto) self() && noexcept { return std::move(*this); }
+    // constexpr decltype(auto) self() const&& noexcept { return std::move(*this); }
 // private:
     // constexpr Derived& derived() & noexcept { return *static_cast<Derived*>(this); }
     // constexpr Derived const& derived() const& noexcept { return *static_cast<Derived const*>(this); }

@@ -106,12 +106,12 @@ Get_transition_traits(TransitionEntry<State,Event,NextState,Guard,Action> const&
 //     return Get_transition_traits_impl<State,Event>(tt);
 // }
 
-template<typename State, typename Event, typename FsmT>
-inline constexpr decltype(auto)
-Get_fsm_ttraits(FsmT&& fsm) noexcept
-{
-    return Get_transition_traits<State,Event>(fsm.derived().transition_table);
-}
+// template<typename State, typename Event, typename FsmT>
+// inline constexpr decltype(auto)
+// Get_fsm_ttraits(FsmT&& fsm) noexcept
+// {
+//     return Get_transition_traits<State,Event>(fsm.derived().transition_table);
+// }
 
 
 template<typename... Entries>
@@ -170,6 +170,8 @@ template<typename Statelist, typename... Ts> struct build_state_list;
 template<template<typename...>class Statelist, typename T, typename... Ts>
 struct build_state_list<Statelist<>, T, Ts...> : build_state_list<Statelist<T>, Ts...> { };
 
+// TODO: Warn about a duplicate state transition, rather than silently filtering it out
+// and ignoring it
 template<template<typename...>class Statelist, typename T, typename... Ts, typename... Ss>
 struct build_state_list<Statelist<Ss...>, T, Ts...>
     : std::conditional_t<contains_v<Statelist<Ss...>, T>,
