@@ -33,14 +33,34 @@ struct is_valid_guard : std::is_invocable_r<bool, T, Args...> { };
 template<typename T, typename... Args>
 constexpr inline auto is_valid_guard_v{is_valid_guard<T,Args...>::value};
 
+struct NoTransitionTraitsTag : Index_constant<0> { };
+struct AnyTransitionTraitsTag : Index_constant<1> { };
+struct ExactTransitionTraitsTag : Index_constant<2> { };
+constexpr inline auto NoTransitionTraits{NoTransitionTraitsTag::value};
+constexpr inline auto AnyTransitionTraits{AnyTransitionTraitsTag::value};
+constexpr inline auto ExactTransitionTraits{ExactTransitionTraitsTag::value};
+
+template<typename FsmT, typename State, typename = void_t<>>
+struct HasTraitsForAnyEvent : NoTransitionTraitsTag { };
+
+template<typename FsmT, typename State>
+struct HasTraitsForAnyEvent<FsmT, State,
+    void_t<decltype(
+        Get_transition_traits<std::decay_t<State>, ufsm::AnyEvent_t>(
+            std::declval<FsmT>().transition_table()))>>
+    : AnyTransitionTraitsTag
+{
+};
+
 template<typename FsmT, typename State, typename Event, typename = void_t<>>
-struct HasTraitsFor : std::false_type { };
+struct HasTraitsFor : HasTraitsForAnyEvent<FsmT, State, Event> { };
+
 template<typename FsmT,typename State, typename Event>
 struct HasTraitsFor<FsmT, State, Event,
     void_t<decltype(
         Get_transition_traits<std::decay_t<State>,std::decay_t<Event>>(
             std::declval<FsmT>().transition_table()))>>
-    : std::true_type
+    : ExactTransitionTraitsTag
 {
 };
 template<typename FsmT, typename State, typename Event>
@@ -119,7 +139,7 @@ struct StateTransition_impl<FsmT_, TTraits_, true, true> {
 };
 
 template<typename Event, typename FsmT_, typename State_,
-         bool = detail::HasTraitsFor_v<FsmT_, State_, Event>>
+         auto = detail::HasTraitsFor_v<FsmT_, State_, Event>>
 struct StateTransition {
     template<typename FsmT, typename State>
     constexpr inline void operator()(FsmT&&, State&&) noexcept
@@ -129,7 +149,7 @@ struct StateTransition {
 };
 
 template<typename Event, typename FsmT_, typename State_>
-struct StateTransition<Event, FsmT_, State_, true> {
+struct StateTransition<Event, FsmT_, State_, detail::ExactTransitionTraits> {
     template<typename FsmT, typename State>
     constexpr inline void operator()(FsmT&& fsm, State&& state) noexcept
     {

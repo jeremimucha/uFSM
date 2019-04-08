@@ -92,6 +92,8 @@ struct TransitionTraits : public Entries...
 {
 };
 
+// TODO: It might be better to return by value. Define a traits type for the return type
+// return by value if sizeof(TransitionEntry) < 2 * sizeof(double) ?
 template<typename State, typename Event, typename NextState, typename Guard, typename Action>
 inline constexpr TransitionEntry<State,Event,NextState,Guard,Action> const&
 Get_transition_traits(TransitionEntry<State,Event,NextState,Guard,Action> const& te) noexcept

@@ -28,6 +28,9 @@ template<typename T> struct identity { using type = T; };
 template<typename...> struct always_false : std::false_type { };
 template<typename... Ts> constexpr inline auto always_false_v{always_false<Ts...>::value};
 
+struct AnyEvent_t { };
+constexpr inline AnyEvent_t AnyEvent{};
+
 template<typename C, typename T> struct contains_impl;
 
 template<template<class...> class C, typename T, typename... Us>
