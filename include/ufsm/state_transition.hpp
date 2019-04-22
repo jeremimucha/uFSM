@@ -53,7 +53,7 @@ struct HasTraitsForAnyEvent<FsmT, State,
 };
 
 template<typename FsmT, typename State, typename Event, typename = void_t<>>
-struct HasTraitsFor : HasTraitsForAnyEvent<FsmT, State, Event> { };
+struct HasTraitsFor : HasTraitsForAnyEvent<FsmT, State> { };
 
 template<typename FsmT,typename State, typename Event>
 struct HasTraitsFor<FsmT, State, Event,
@@ -65,6 +65,40 @@ struct HasTraitsFor<FsmT, State, Event,
 };
 template<typename FsmT, typename State, typename Event>
 constexpr inline auto HasTraitsFor_v = HasTraitsFor<FsmT,State,Event>::value;
+
+// Alternative approach:
+// ------------------------------------------------------------------------------------------------
+struct NoTransitionTraitsForEvent { };
+struct TransitionTraitsForAnyEvent { };
+struct TransitionTraitsForExactEvent { };
+
+template<typename FsmT, typename State, typename = void_t<>>
+struct SelectTransitionCategoryAnyT { using type = NoTransitionTraitsForEvent; };
+
+template<typename FsmT, typename State>
+struct SelectTransitionCategoryAnyT<FsmT, State,
+    void_t<decltype(
+        Get_transition_traits<std::decay_t<State>, ufsm::AnyEvent_t>(
+            std::declval<FsmT>().transition_table()))>>
+{
+    using type = TransitionTraitsForAnyEvent;
+};
+
+template<typename FsmT, typename State, typename Event, typename = void_t<>>
+struct SelectTransitionCategoryT : SelectTransitionCategoryAnyT<FsmT, State> { };
+
+template<typename FsmT, typename State, typename Event>
+struct SelectTransitionCategoryT<FsmT, State, Event,
+    void_t<decltype(
+        Get_transition_traits<std::decay_t<State>,std::decay_t<Event>>(
+            std::declval<FsmT>().transition_table()))>>
+{
+    using type = TransitionTraitsForExactEvent;
+};
+
+template<typename FsmT, typename State, typename Event>
+using SelectTransitionCategory = typename SelectTransitionCategoryT<FsmT, State, Event>::type;
+// ------------------------------------------------------------------------------------------------
 
 } // namespace detail
 
@@ -149,6 +183,19 @@ struct StateTransition {
 };
 
 template<typename Event, typename FsmT_, typename State_>
+struct StateTransition<Event, FsmT_, State_, detail::AnyTransitionTraits> {
+    template<typename FsmT, typename State>
+    constexpr inline void operator()(FsmT&& fsm, State&& state) noexcept
+    {
+        using state_t = std::decay_t<State>;
+        auto&& ttraits = Get_transition_traits<state_t, ufsm::AnyEvent_t>(fsm.transition_table());
+        StateTransition_impl<std::decay_t<FsmT>, std::decay_t<decltype(ttraits)>>{}(
+            std::forward<FsmT>(fsm), std::forward<decltype(ttraits)>(ttraits),
+            std::forward<State>(state));
+    }
+};
+
+template<typename Event, typename FsmT_, typename State_>
 struct StateTransition<Event, FsmT_, State_, detail::ExactTransitionTraits> {
     template<typename FsmT, typename State>
     constexpr inline void operator()(FsmT&& fsm, State&& state) noexcept
@@ -161,6 +208,47 @@ struct StateTransition<Event, FsmT_, State_, detail::ExactTransitionTraits> {
             std::forward<State>(state));
     }
 };
+
+// Alternative approach - specialize on type, rather than an integral value
+// ------------------------------------------------------------------------------------------------
+// template<typename Event, typename FsmT_, typename State_,
+//          typename = detail::SelectTransitionCategory<FsmT_, State_, Event>>
+// struct StateTransition {
+//     template<typename FsmT, typename State>
+//     constexpr inline void operator()(FsmT&&, State&&) noexcept
+//     {
+//         /* nop */
+//     }
+// };
+
+// template<typename Event, typename FsmT_, typename State_>
+// struct StateTransition<Event, FsmT_, State_, detail::TransitionTraitsForAnyEvent> {
+//     template<typename FsmT, typename State>
+//     constexpr inline void operator()(FsmT&& fsm, State&& state) noexcept
+//     {
+//         using state_t = std::decay_t<State>;
+//         using event_t = ufsm::AnyEvent_t;
+//         auto&& ttraits = Get_transition_traits<state_t, event_t>(fsm.transition_table());
+//         StateTransition_impl<std::decay_t<FsmT>, std::decay_t<decltype(ttraits)>>{}(
+//             std::forward<FsmT>(fsm), std::forward<decltype(ttraits)>(ttraits),
+//             std::forward<State>(state));
+//     }
+// };
+
+// template<typename Event, typename FsmT_, typename State_>
+// struct StateTransition<Event, FsmT_, State_, detail::TransitionTraitsForExactEvent> {
+//     template<typename FsmT, typename State>
+//     constexpr inline void operator()(FsmT&& fsm, State&& state) noexcept
+//     {
+//         using state_t = std::decay_t<State>;
+//         using event_t = std::decay_t<Event>;
+//         auto&& ttraits = Get_transition_traits<state_t, event_t>(fsm.transition_table());
+//         StateTransition_impl<std::decay_t<FsmT>, std::decay_t<decltype(ttraits)>>{}(
+//             std::forward<FsmT>(fsm), std::forward<decltype(ttraits)>(ttraits),
+//             std::forward<State>(state));
+//     }
+// };
+// ------------------------------------------------------------------------------------------------
 
 // // -Guard, -NextState
 // template<typename FsmT, typename TTraits, typename State>
