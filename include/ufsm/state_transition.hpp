@@ -202,6 +202,7 @@ struct StateTransition<Event, FsmT_, State_, detail::ExactTransitionTraits> {
     {
         using state_t = std::decay_t<State>;
         using event_t = std::decay_t<Event>;
+        // TODO: Is auto&& ok here? Use decltype(auto) instead?
         auto&& ttraits = Get_transition_traits<state_t, event_t>(fsm.transition_table());
         StateTransition_impl<std::decay_t<FsmT>, std::decay_t<decltype(ttraits)>>{}(
             std::forward<FsmT>(fsm), std::forward<decltype(ttraits)>(ttraits),

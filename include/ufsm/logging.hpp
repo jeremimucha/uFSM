@@ -130,7 +130,7 @@ auto get_type_name(const char *ptr, Index_sequence<Ns...>) noexcept {
 
 
 template <class T>
-const char *get_type_name() {
+const char* get_type_name() {
 // 53 -> offset from the beginning of name deduced by __PRETTY__FUNCTION
 // -2 -> trailing ']' and '\0' in the deduced name
 return detail::get_type_name<T, 53>(
@@ -151,6 +151,7 @@ struct fsm_log_event_impl {
 template<typename FsmT, typename State, typename Event>
 struct fsm_log_event_impl<FsmT, State, Event, true> {
     inline void operator()(FsmT const& fsm, State const& state, Event const& event) const
+    noexcept(noexcept(FsmT::logger().log_event(fsm, state, event)))
     {
         FsmT::logger().log_event(fsm, state, event);
     }
@@ -160,20 +161,10 @@ struct fsm_log_event_impl<FsmT, State, Event, true> {
 
 template<typename FsmT, typename State, typename Event>
 constexpr inline void fsm_log_event(FsmT const& fsm, State const& state, Event const& event)
+noexcept(noexcept(detail::fsm_log_event_impl<FsmT, State, Event>{}(fsm, state, event)))
 {
     detail::fsm_log_event_impl<FsmT, State, Event>{}(fsm, state, event);
 }
-
-// template<typename FsmT, typename State, typename Event>
-// std::enable_if_t<detail::has_log_event_v<FsmT, State, Event>>
-// fsm_log_event(FsmT const& fsm, State const& state, Event const& event) noexcept
-// {
-//     FsmT::logger().log_event(fsm, state, event);
-// }
-
-// template<typename FsmT, typename State, typename Event>
-// std::enable_if_t<!detail::has_log_event_v<FsmT, State, Event>>
-// fsm_log_event(FsmT const&, State const&, Event const&) noexcept {/* nop */}
 /* --------------------------------------------------------------------------------------------- */
 
 /* log event */
@@ -190,6 +181,7 @@ struct fsm_log_guard_impl {
 template<typename FsmT, typename Guard>
 struct fsm_log_guard_impl<FsmT, Guard, true> {
     inline void operator()(FsmT const& fsm, Guard const& guard, bool result) const
+    noexcept(noexcept(FsmT::logger().log_guard(fsm, guard, result)))
     {
         FsmT::logger().log_guard(fsm, guard, result);
     }
@@ -198,22 +190,11 @@ struct fsm_log_guard_impl<FsmT, Guard, true> {
 } // detail
 
 template<typename FsmT, typename Guard>
-constexpr inline void fsm_log_guard(FsmT const& fsm, Guard const& guard, bool result)
+inline void fsm_log_guard(FsmT const& fsm, Guard const& guard, bool result)
+noexcept(noexcept(detail::fsm_log_guard_impl<FsmT, Guard>{}(fsm, guard, result)))
 {
     detail::fsm_log_guard_impl<FsmT, Guard>{}(fsm, guard, result);
 }
-
-
-// template<typename FsmT, typename Guard/* , typename Event */>
-// std::enable_if_t<detail::has_log_guard_v<FsmT, Guard/* , Event */>>
-// fsm_log_guard(FsmT const& fsm, Guard const& guard, /* Event const& event, */ bool result) noexcept
-// {
-//     FsmT::logger().log_guard(fsm, guard, /* event, */ result);
-// }
-
-// template<typename FsmT, typename Guard/* , typename Event */>
-// std::enable_if_t<!detail::has_log_guard_v<FsmT, Guard/* , Event */>>
-// fsm_log_guard(FsmT const&, Guard const&, /* Event const&, */ bool) noexcept {/* nop */}
 /* --------------------------------------------------------------------------------------------- */
 
 
@@ -229,6 +210,7 @@ struct fsm_log_action_impl {
 template<typename FsmT, typename Action>
 struct fsm_log_action_impl<FsmT, Action, true> {
     inline void operator()(FsmT const& fsm, Action const& action) const
+    noexcept(noexcept(FsmT::logger().log_action(fsm, action)))
     {
         FsmT::logger().log_action(fsm, action);
     }
@@ -237,22 +219,11 @@ struct fsm_log_action_impl<FsmT, Action, true> {
 } // detail
 
 template<typename FsmT, typename Action>
-constexpr inline void fsm_log_action(FsmT const& fsm, Action const& action)
+inline void fsm_log_action(FsmT const& fsm, Action const& action)
+noexcept(noexcept(detail::fsm_log_action_impl<FsmT, Action>{}(fsm, action)))
 {
     detail::fsm_log_action_impl<FsmT, Action>{}(fsm, action);
 }
-
-
-// template<typename FsmT, typename Action/* , typename Event */>
-// std::enable_if_t<detail::has_log_action_v<FsmT, Action/* , Event */>>
-// fsm_log_action(FsmT const& fsm, Action const& action/*,  Event const& event */) noexcept
-// {
-//     FsmT::logger().log_action(fsm, action/* , event */);
-// }
-
-// template<typename FsmT, typename Action/* , typename Event */>
-// std::enable_if_t<!detail::has_log_action_v<FsmT, Action/* , Event */>>
-// fsm_log_action(FsmT const&, Action const&/* , Event const& */) noexcept {/* nop */}
 /* --------------------------------------------------------------------------------------------- */
 
 
@@ -271,8 +242,8 @@ struct fsm_log_state_change_impl {
 
 template<typename FsmT, typename SrcState, typename DstState>
 struct fsm_log_state_change_impl<FsmT, SrcState, DstState, true> {
-    inline void operator()(
-        FsmT const& fsm, SrcState const& src_state, DstState const& dst_state) const
+    inline void operator()(FsmT const& fsm, SrcState const& src_state, DstState const& dst_state) const
+    noexcept(noexcept(FsmT::logger().log_state_change(fsm, src_state, dst_state)))
     {
         FsmT::logger().log_state_change(fsm, src_state, dst_state);
     }
@@ -283,20 +254,10 @@ struct fsm_log_state_change_impl<FsmT, SrcState, DstState, true> {
 template<typename FsmT, typename SrcState, typename DstState>
 constexpr inline void fsm_log_state_change(
     FsmT const& fsm, SrcState const& src_state, DstState const& dst_state)
+    noexcept(noexcept(detail::fsm_log_state_change_impl<FsmT, SrcState, DstState>{}(fsm, src_state, dst_state)))
 {
     detail::fsm_log_state_change_impl<FsmT, SrcState, DstState>{}(fsm, src_state, dst_state);
 }
-
-// template<typename FsmT, typename SrcState, typename DstState>
-// std::enable_if_t<detail::has_log_state_change_v<FsmT, SrcState, DstState>>
-// fsm_log_state_change(FsmT const& fsm, SrcState const& src_state, DstState const& dst_state) noexcept
-// {
-//     FsmT::logger().log_state_change(fsm, src_state, dst_state);
-// }
-
-// template<typename FsmT, typename SrcState, typename DstState>
-// std::enable_if_t<!detail::has_log_state_change_v<FsmT, SrcState, DstState>>
-// fsm_log_state_change(FsmT const&, SrcState const&, DstState const&) noexcept {/* nop */}
 /* --------------------------------------------------------------------------------------------- */
 
 
@@ -312,7 +273,7 @@ struct fsm_log_exit_impl {
 template<typename FsmT, typename State>
 struct fsm_log_exit_impl<FsmT, State, true> {
     inline void operator()(FsmT const& fsm, State const& state) const
-        noexcept(std::is_nothrow_invocable_v<decltype(FsmT::logger().log_exit(fsm, state))>)
+    noexcept(noexcept(FsmT::logger().log_exit(fsm, state)))
     {
         FsmT::logger().log_exit(fsm, state);
     }
@@ -322,8 +283,7 @@ struct fsm_log_exit_impl<FsmT, State, true> {
 
 template<typename FsmT, typename State>
 constexpr inline void fsm_log_exit(FsmT const& fsm, State const& state)
-    noexcept(std::is_nothrow_invocable_v<
-        detail::fsm_log_exit_impl<FsmT, State>, FsmT const&, State const&>)
+noexcept(noexcept(detail::fsm_log_exit_impl<FsmT, State>{}(fsm, state)))
 {
     detail::fsm_log_exit_impl<FsmT, State>{}(fsm, state);
 }
@@ -354,6 +314,7 @@ struct fsm_log_entry_impl {
 template<typename FsmT, typename State>
 struct fsm_log_entry_impl<FsmT, State, true> {
     inline void operator()(FsmT const& fsm, State const& state) const
+    noexcept(noexcept(FsmT::logger().log_entry(fsm, state)))
     {
         FsmT::logger().log_entry(fsm, state);
     }
@@ -363,20 +324,10 @@ struct fsm_log_entry_impl<FsmT, State, true> {
 
 template<typename FsmT, typename State>
 constexpr inline void fsm_log_entry(FsmT const& fsm, State const& state)
+noexcept(noexcept(detail::fsm_log_entry_impl<FsmT, State>{}(fsm, state)))
 {
     detail::fsm_log_entry_impl<FsmT, State>{}(fsm, state);
 }
-
-// template<typename FsmT, typename State>
-// std::enable_if_t<detail::has_log_entry_v<FsmT, State>>
-// fsm_log_entry(FsmT const& fsm, State const& state) noexcept
-// {
-//     FsmT::logger().log_entry(fsm, state);
-// }
-
-// template<typename FsmT, typename State>
-// std::enable_if_t<!detail::has_log_entry_v<FsmT, State>>
-// fsm_log_entry(FsmT const&, State const&) noexcept {/* nop */}
 /* --------------------------------------------------------------------------------------------- */
 
 
