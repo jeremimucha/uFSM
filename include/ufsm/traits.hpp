@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <utility>
 // #include "transition_table.hpp"
+#include "fsmfwd.hpp"
 
 
 namespace ufsm
@@ -44,6 +45,25 @@ static constexpr inline auto contains_v{contains_impl<C,T>::value};
 
 template<typename T> struct initial_state { };
 template<typename T> constexpr inline auto initial_state_v{initial_state<T>{}};
+
+template<typename FsmT, typename = void_t<>> struct has_transition_table : std::false_type { };
+template<typename FsmT>
+struct has_transition_table<FsmT, void_t<decltype(std::declval<FsmT>().transition_table())>>
+    : std::true_type
+{
+};
+template<typename FsmT>
+constexpr inline auto has_transition_table_v{has_transition_table<FsmT>::value};
+
+template<typename State, bool = has_transition_table_v<State>>
+struct state_traits {
+    using state_type = State;
+};
+
+template<typename State>
+struct state_traits<State, true> {
+    using state_type = ufsm::Fsm<State>;
+};
 
 template<typename List, typename T, size_type N = 0>
 struct state_index { };

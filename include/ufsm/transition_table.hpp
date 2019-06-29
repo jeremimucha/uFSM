@@ -1,6 +1,7 @@
 #pragma once
 
 #include <type_traits>
+// #include "fsmfwd.hpp"
 #include "traits.hpp"
 
 namespace ufsm
@@ -195,16 +196,6 @@ struct fsm_state_list<TransitionTraits<Ts...>>
     : build_state_list<typelist<>, typename Ts::state_type...>
 {
 };
-
-template<typename FsmT, typename = void_t<>> struct has_transition_table : std::false_type { };
-template<typename FsmT>
-struct has_transition_table<FsmT, void_t<decltype(std::declval<FsmT>().transition_table())>>
-    : std::true_type
-{
-};
-
-template<typename FsmT>
-constexpr inline auto has_transition_table_v{has_transition_table<FsmT>::value};
 
 template<typename TTraits>
 using fsm_state_list_t = typename fsm_state_list<TTraits>::type;

@@ -136,6 +136,7 @@ struct StateTransition_impl<FsmT_, TTraits_, false, true> {
     template<typename FsmT, typename TTraits, typename State>
     constexpr inline void operator()(FsmT&& fsm, TTraits&& ttraits, State&& state) noexcept
     {
+        std::cerr << "We're here\n";
         using fsm_t = std::decay_t<FsmT>;
         using ttraits_t = std::decay_t<TTraits>;
         // using state_t = std::decay_t<State>;
@@ -179,6 +180,7 @@ struct StateTransition {
     constexpr inline void operator()(FsmT&&, State&&) noexcept
     {
         /* nop */
+        std::cerr << "in nop\n";
     }
 };
 
@@ -200,6 +202,7 @@ struct StateTransition<Event, FsmT_, State_, detail::ExactTransitionTraits> {
     template<typename FsmT, typename State>
     constexpr inline void operator()(FsmT&& fsm, State&& state) noexcept
     {
+        std::cerr << "First we're here\n";
         using state_t = std::decay_t<State>;
         using event_t = std::decay_t<Event>;
         // TODO: Is auto&& ok here? Use decltype(auto) instead?
