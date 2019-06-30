@@ -25,8 +25,19 @@ class Fsm<Impl, typelist<States...>>
 public:
     constexpr Fsm() noexcept = default;
 
-    using Base::Base;
-    using Base::set_initial_state;
+    template<typename State>
+    constexpr explicit Fsm(initial_state<State> init_state) noexcept
+        : Base{init_state}
+    {
+        back::fsm_entry(*this, back::Get<state_index_v<typelist<States...>,State>>(*this));
+    }
+
+    template<typename State>
+    constexpr void set_initial_state(initial_state<State> init_state) noexcept
+    {
+        Base::set_initial_state(init_state);
+        back::fsm_entry(*this, back::Get<state_index_v<typelist<States...>,State>>(*this));
+    }
 
     template<typename FsmT, typename Event, size_type Idx, size_type... Idxs>
     friend constexpr inline void

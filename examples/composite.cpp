@@ -2,6 +2,7 @@
 #include <type_traits>
 
 #include "fsm.hpp"
+#include "trace_logger.hpp"
 
 namespace e {
 struct A {
@@ -18,52 +19,28 @@ struct E {
 
 class Composite;
 class Sub;
-class Idle {
+struct Idle {
+    template<typename SM> void entry(SM const&) const noexcept { }
+    template<typename SM> void exit(SM const&) const noexcept { }
 };  // empty initial state
 class C1 {
+public:
+    void entry(Composite const&) const { }
+    void exit(Composite const&) const { }
 };
 class S1 {
 };
 class Final {
 };  // empty terminating state
 
-template<typename FsmType>
-struct trace_logger {
-        template <typename State, typename Event>
-        void log_event(FsmType const&, State const&, Event const&) const noexcept
-        {
-            std::cerr << '[' << ufsm::logging::get_type_name<FsmType>() << "]: "
-                      << " in state [" << ufsm::logging::get_type_name<State>() << "], got event ["
-                      << ufsm::logging::get_type_name<Event>() << "]\n";
-        }
-        template <typename State>
-        void log_exit(FsmType const&, State const&) const noexcept
-        {
-            std::cerr << "[" << ufsm::logging::get_type_name<FsmType>() << "]: state exit ["
-                      << ufsm::logging::get_type_name<State>() << "]\n";
-        }
-        template <typename State>
-        void log_entry(FsmType const&, State const&) const noexcept
-        {
-            std::cerr << "[" << ufsm::logging::get_type_name<FsmType>() << "]: state entry ["
-                      << ufsm::logging::get_type_name<State>() << "]\n";
-        }
-        template <typename SrcState, typename DstState>
-        void log_state_change(FsmType const&, SrcState const&, DstState const&) const noexcept
-        {
-            std::cerr << "[" << ufsm::logging::get_type_name<FsmType>() << "]: state change ["
-                      << ufsm::logging::get_type_name<SrcState>() << "] -> ["
-                      << ufsm::logging::get_type_name<DstState>() << "]\n";
-        }
-    };
 
 class Sub {
     static inline trace_logger<Sub> logger_{ };
 public:
     template<typename SM>
-    void entry(SM const& fsm) const { std::cerr << "enter 'Sub' state\n"; }
+    void entry(SM const&) const { }
     template<typename SM>
-    void exit(SM const& fsm) const { std::cerr << "exit 'Sub' state\n"; }
+    void exit(SM const&) const { }
     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
 
     constexpr inline auto transition_table() const noexcept

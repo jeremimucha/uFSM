@@ -4,6 +4,7 @@
 #include "traits.hpp"
 #include "fsm_state.hpp"
 #include "get.hpp"
+#include "entry_action.hpp"
 
 namespace ufsm
 {
@@ -27,17 +28,19 @@ public:
 
     template<typename State>
     constexpr explicit Fsm_impl(initial_state<State>) noexcept
-        : state_{state_index_v<typelist<States...>,State>} { }
+        : state_{state_index_v<typelist<States...>,State>}
+        {
+        }
 
     template<typename... Ts>
     constexpr Fsm_impl(Ts&&... states) noexcept((... && std::is_nothrow_constructible_v<States, Ts>))
         : FsmState<Indices,States>{std::forward<Ts>(states)}...
         { }
 
-    template<typename T>
-    constexpr void set_initial_state(initial_state<T>) noexcept
+    template<typename State>
+    constexpr void set_initial_state(initial_state<State>) noexcept
     {
-        state_ = state_index_v<typelist<States...>,T>;
+        state_ = state_index_v<typelist<States...>,State>;
     }
 
     constexpr inline size_type state() const noexcept { return state_; }

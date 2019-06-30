@@ -32,6 +32,8 @@ constexpr inline auto has_handle_event_v{has_handle_event<State,Args...>::value}
 template<typename State> struct isFsmT : std::false_type { };
 template<typename Impl, typename States>
 struct isFsmT<Fsm<Impl, States>> : std::true_type { };
+template<typename State>
+constexpr inline auto isFsm{isFsmT<State>::value};
 
 template<typename FsmT> struct baseFsmStateImpl;
 template<typename Impl, typename States>
@@ -47,7 +49,7 @@ struct baseFsmStateImpl<ufsm::Fsm<Impl, States>&> { using type = Impl&; };
 template<typename Impl, typename States>
 struct baseFsmStateImpl<ufsm::Fsm<Impl, States>&&> { using type = Impl&&; };
 
-template<typename State, bool = isFsmT<std::decay_t<State>>::value>
+template<typename State, bool = isFsm<std::decay_t<State>>>
 struct baseFsmState { using type = State; };
 template<typename State>
 struct baseFsmState<State, true> : baseFsmStateImpl<State> { };
@@ -61,7 +63,7 @@ constexpr decltype(auto) as_base_state(FsmT&& fsm) noexcept
     return static_cast<baseFsmStateT<FsmT>>(std::forward<FsmT>(fsm));
 }
 
-template<typename State, bool = isFsmT<std::decay_t<State>>::value>
+template<typename State, bool = isFsm<std::decay_t<State>>>
 struct tryDispatch {
     template<typename Event>
     constexpr inline void operator()(State const&, Event) const noexcept { /* nop */ }
@@ -83,7 +85,13 @@ struct tryDispatch<State, true> {
 // 2. Exit the source state configuration.
 // 3. Execute the actions associated with the transition.
 // 4. Enter the target state configuration.
-// dispatch_event using `transition` for branching during event handling
+// dispatch_event using `transition` for branching during event handling~
+// TODO: Potential dispatch_event optimization
+// Statically build a list of states that handle the given Event, iterate only over those
+// states (i.e. pass and index_sequence of only the approptiate indices). This check would need
+// to be recursive - all composite states need to be walked all the way down - if there's a nested
+// composite state which can handle the given event the parent state of the composite handling
+// the event needs to be included in the potential handlers list.
 template<typename FsmT, typename Event, size_type Idx, size_type... Idxs>
 constexpr inline void
 dispatch_event(FsmT&& fsm, Event&& event, Index_sequence<Idx,Idxs...>) noexcept;
