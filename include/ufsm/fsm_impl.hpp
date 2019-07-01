@@ -27,7 +27,7 @@ public:
     constexpr Fsm_impl() noexcept = default;
 
     template<typename State>
-    constexpr explicit Fsm_impl(initial_state<State>) noexcept
+    constexpr explicit Fsm_impl(initial_state_t<State>) noexcept
         : state_{state_index_v<typelist<States...>,State>}
         {
         }
@@ -38,7 +38,7 @@ public:
         { }
 
     template<typename State>
-    constexpr void set_initial_state(initial_state<State>) noexcept
+    constexpr void set_initial_state(initial_state_t<State>) noexcept
     {
         state_ = state_index_v<typelist<States...>,State>;
     }

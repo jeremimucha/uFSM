@@ -193,11 +193,11 @@ inline void run_animation(T&& fsm) noexcept
 
 int main()
 {
-    // auto animation = Animation{initial_state_v<sIdle>};  // set initial state on construction
+    // auto animation = Animation{initial_state<sIdle>};  // set initial state on construction
     // std::cerr << "has_guard = " << has_guard_v<transition_table<sAnimating,eUpdate>> << "\n";
     // auto animation = Animation{};
     ufsm::Fsm<Animation> animation{};
-    animation.set_initial_state(ufsm::initial_state_v<sIdle>);    // or explicitly later
+    animation.set_initial_state(ufsm::initial_state<sIdle>);    // or explicitly later
 
     constexpr auto num_laps = 1'000'000u;
     auto sw = Stopwatch{"Animation"};

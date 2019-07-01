@@ -47,7 +47,7 @@ public:
     {
         using namespace ufsm;
         return make_transition_table(
-                make_entry(from_state<Idle>, event<e::C>, next_state<S1>),
+                make_entry(initial_state<Idle>, event<e::C>, next_state<S1>),
                 make_entry(from_state<S1>, event<e::D>, next_state<Idle>)
             );
     }
@@ -78,7 +78,7 @@ inline void send_events(SM&& fsm, Events&&... events) noexcept
 
 int main()
 {
-    ufsm::Fsm<Composite> sm{ufsm::initial_state_v<Idle>};
+    ufsm::Fsm<Composite> sm{ufsm::initial_state<Idle>};
     send_events(sm,
         e::A{}, e::B{}, e::C{}, e::D{}, e::E{}
     );

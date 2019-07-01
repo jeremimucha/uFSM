@@ -245,9 +245,9 @@ inline void run_animation(T&& fsm) noexcept
 
 int main()
 {
-    // auto animation = Animation{initial_state_v<sIdle>};  // set initial state on construction
+    // auto animation = Animation{initial_state<sIdle>};  // set initial state on construction
     ufsm::Fsm<Animation> animation{};
     // auto animation = Animation{};
-    animation.set_initial_state(ufsm::initial_state_v<sIdle>);    // or explicitly later
+    animation.set_initial_state(ufsm::initial_state<sIdle>);    // or explicitly later
     run_animation(animation);
 }

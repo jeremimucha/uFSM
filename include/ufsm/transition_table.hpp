@@ -125,41 +125,59 @@ constexpr auto make_transition_table(Entries&&... entries) noexcept
 
 namespace detail
 {
-// template<typename T> struct wrap_t { using type = T; };
-// template<typename T> constexpr inline auto wrap = wrap_t<T>{};
-template<typename T> struct state_t { using type = T; };
+// template<typename T> struct initial_state_t { using type = T; };
+// template<typename T> struct state_t { using type = T; };
 template<typename T> struct event_t { using type = T; };
 template<typename T> struct next_state_t { using type = T; };
 } // namespace detail
 
-template<typename T> constexpr inline auto from_state = detail::state_t<T>{};
+// template<typename T> constexpr inline auto initial_state = detail::initial_state_t<T>{};
+template<typename T> constexpr inline auto from_state = state_t<T>{};
 template<typename T> constexpr inline auto event = detail::event_t<T>{};
 template<typename T> constexpr inline auto next_state = detail::next_state_t<T>{};
 
+template<typename T> struct is_initial_state : std::false_type { };
+template<typename T>
+struct is_initial_state<initial_state_t<T>> : std::true_type { };
+template<typename T>
+constexpr inline auto is_initial_state_v{is_initial_state<T>::value};
+
+// TODO: Account for the possibility that the user declares multiple initial-states,
+// static-assert to inform against the mistake.
+// Current implementation also imposes a requirement that the transition table must definie an
+// initial_state. Account for the possibility of not declaring the initial_state?
+template<typename... States> struct get_initial_state_t;
+template<typename T, typename... Ts>
+struct get_initial_state_t<initial_state_t<T>, Ts...> { using type = T; };
+template<typename T, typename... Ts>
+struct get_initial_state_t<T, Ts...> : get_initial_state_t<Ts...> { };
+
+template<typename... Ts>
+using get_initial_state = typename get_initial_state_t<Ts...>::type;
 
 template<typename State, typename Event, typename NextState, typename Guard, typename Action>
-constexpr auto make_entry(detail::state_t<State>, detail::event_t<Event>,
+constexpr auto make_entry(state_t<State>, detail::event_t<Event>,
                           detail::next_state_t<NextState>, Guard guard, Action action) noexcept
 {
     return TransitionEntry<State,Event,NextState,Guard,Action>{std::move(guard), std::move(action)};
 }
 
 template<typename State, typename Event, typename NextState>
-constexpr auto make_entry(detail::state_t<State>, detail::event_t<Event>,
+constexpr auto make_entry(state_t<State>, detail::event_t<Event>,
                           detail::next_state_t<NextState>) noexcept
 {
     return TransitionEntry<State,Event,NextState,void,void>{};
 }
 
 template<typename State, typename Event, typename NextState, typename Guard>
-constexpr auto make_gentry(detail::state_t<State>, detail::event_t<Event>,
+constexpr auto make_gentry(state_t<State>, detail::event_t<Event>,
                            detail::next_state_t<NextState>, Guard guard) noexcept
 {
     return TransitionEntry<State,Event,NextState,Guard,void>{std::move(guard)};
 }
 
 template<typename State, typename Event, typename NextState, typename Action>
-constexpr auto make_aentry(detail::state_t<State>, detail::event_t<Event>,
+constexpr auto make_aentry(state_t<State>, detail::event_t<Event>,
                            detail::next_state_t<NextState>, Action action) noexcept
 {
     return TransitionEntry<State,Event,NextState,void,Action>{std::move(action)};

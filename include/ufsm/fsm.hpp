@@ -23,17 +23,22 @@ class Fsm<Impl, typelist<States...>>
     using Indices = Make_index_sequence<sizeof...(States)>;
     using Base = back::Fsm_impl<Indices, States...>;
 public:
-    constexpr Fsm() noexcept = default;
+    constexpr Fsm() noexcept
+        : Base{get_initial_state<States...>{}}
+    {
+        using init_state = get_initial_state<States...>;
+        back::fsm_entry(*this, back::Get<state_index_v<typelist<States...>, init_state>>(*this));
+    }
 
     template<typename State>
-    constexpr explicit Fsm(initial_state<State> init_state) noexcept
+    constexpr explicit Fsm(initial_state_t<State> init_state) noexcept
         : Base{init_state}
     {
         back::fsm_entry(*this, back::Get<state_index_v<typelist<States...>,State>>(*this));
     }
 
     template<typename State>
-    constexpr void set_initial_state(initial_state<State> init_state) noexcept
+    constexpr void set_initial_state(initial_state_t<State> init_state) noexcept
     {
         Base::set_initial_state(init_state);
         back::fsm_entry(*this, back::Get<state_index_v<typelist<States...>,State>>(*this));

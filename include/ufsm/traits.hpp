@@ -43,8 +43,9 @@ struct contains_t : contains_impl<C,T> { };
 template<typename C, typename T>
 static constexpr inline auto contains_v{contains_impl<C,T>::value};
 
-template<typename T> struct initial_state { };
-template<typename T> constexpr inline auto initial_state_v{initial_state<T>{}};
+template<typename T> struct state_t { using type = T; };
+template<typename T> struct initial_state_t : state_t<T> { };
+template<typename T> constexpr inline auto initial_state{initial_state_t<T>{}};
 
 template<typename FsmT, typename = void_t<>> struct has_transition_table : std::false_type { };
 template<typename FsmT>
