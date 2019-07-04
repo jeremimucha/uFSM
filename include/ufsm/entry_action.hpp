@@ -4,6 +4,7 @@
 #include <utility>
 #include "traits.hpp"
 #include "logging.hpp"
+#include "try_set_initial_state.hpp"
 
 
 namespace ufsm
@@ -39,7 +40,9 @@ struct FsmEntry<FsmT_, State_, true> {
     constexpr inline void operator()(FsmT&& fsm, State&& state) noexcept
     {
         logging::fsm_log_entry(fsm, state);
+        // TODO: remove first std::forward call
         std::forward<State>(state).entry(std::forward<FsmT>(fsm));
+        detail::trySetInitialState<std::decay_t<State>>{}(std::forward<State>(state));
     }
 };
 

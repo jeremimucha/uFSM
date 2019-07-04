@@ -29,12 +29,6 @@ struct has_handle_event : has_handle_event_impl<State, void, Args...> { };
 template<typename State, typename... Args>
 constexpr inline auto has_handle_event_v{has_handle_event<State,Args...>::value};
 
-template<typename State> struct isFsmT : std::false_type { };
-template<typename Impl, typename States>
-struct isFsmT<Fsm<Impl, States>> : std::true_type { };
-template<typename State>
-constexpr inline auto isFsm{isFsmT<State>::value};
-
 template<typename FsmT> struct baseFsmStateImpl;
 template<typename Impl, typename States>
 struct baseFsmStateImpl<ufsm::Fsm<Impl, States>> { using type = Impl; };

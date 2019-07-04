@@ -20,9 +20,13 @@ template<typename Impl, typename... States>
 class Fsm<Impl, typelist<States...>>
     : public Impl, public back::Fsm_impl<Make_index_sequence<sizeof...(States)>, States...>
 {
-    using Indices = Make_index_sequence<sizeof...(States)>;
-    using Base = back::Fsm_impl<Indices, States...>;
+    using Base = back::Fsm_impl<Make_index_sequence<sizeof...(States)>, States...>;
 public:
+    using Indices = Make_index_sequence<sizeof...(States)>;
+    using InitialState = typename initial_state_or<Impl,
+                                                   typename front<typelist<States...>>::type
+                                                  >::type;
+
     constexpr Fsm() noexcept = default;
 
     template<typename State>

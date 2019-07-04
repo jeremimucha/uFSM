@@ -20,7 +20,9 @@ struct E {
 class Composite;
 class Sub;
 struct Idle {
-    template<typename SM> void entry(SM const&) const noexcept { }
+    template<typename SM> void entry(SM const&) const noexcept {
+
+    }
     template<typename SM> void exit(SM const&) const noexcept { }
 };  // empty initial state
 class C1 {
@@ -43,6 +45,9 @@ public:
     void exit(SM const&) const { }
     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
 
+    // constexpr inline auto initial_state() const noexcept { return ufsm::initial_state<Idle>; }
+    using InitialState = Idle;
+
     constexpr inline auto transition_table() const noexcept
     {
         using namespace ufsm;
@@ -54,9 +59,8 @@ public:
 };
 
 class Composite {
-    static inline trace_logger<Composite> logger_{ };
 public:
-    static constexpr inline decltype(auto) logger() noexcept { return logger_; }
+    using InitialState = Idle;
     constexpr inline auto transition_table() const noexcept
     {
         using namespace ufsm;
@@ -66,6 +70,11 @@ public:
                 make_entry(from_state<Sub>, event<e::E>, next_state<Idle>)
             );
     }
+
+    static constexpr inline decltype(auto) logger() noexcept { return logger_; }
+
+private:
+    static inline trace_logger<Composite> logger_{ };
 };
 
 template<typename SM, typename... Events>

@@ -28,6 +28,17 @@ template<typename...> using void_t = void;
 template<typename T> struct identity { using type = T; };
 template<typename...> struct always_false : std::false_type { };
 template<typename... Ts> constexpr inline auto always_false_v{always_false<Ts...>::value};
+template<typename Typelist> struct front;
+template<template<typename...> class List, class T, class... Ts>
+struct front<List<T, Ts...>> { using type = T; };
+template<template<typename...> class List>
+struct front<List<>> { };
+
+template<typename State> struct isFsmT : std::false_type { };
+template<typename Impl, typename States>
+struct isFsmT<::ufsm::Fsm<Impl, States>> : std::true_type { };
+template<typename State>
+constexpr inline auto isFsm{isFsmT<State>::value};
 
 struct AnyEvent_t { };
 constexpr inline AnyEvent_t AnyEvent{};
@@ -45,6 +56,26 @@ static constexpr inline auto contains_v{contains_impl<C,T>::value};
 
 template<typename T> struct initial_state { };
 template<typename T> constexpr inline auto initial_state_v{initial_state<T>{}};
+
+template<typename T, typename = void_t<>> struct has_initial_state : std::false_type { };
+template<typename T>
+struct has_initial_state<T, void_t<typename T::InitialState>> : std::true_type { };
+template<typename T>
+constexpr inline auto has_initial_state_v{has_initial_state<T>::value};
+
+template<typename T, typename U, bool = has_initial_state<T>::value> struct initial_state_or {
+    using type = U;
+};
+template<typename T, typename U>
+struct initial_state_or<T, U, true> { using type = typename T::InitialState; };
+
+template<typename T> struct get_initial_state {
+    using type = typename T::initial_state;
+};
+// template<typename T> struct get_initial_state<T, false> {
+//     using type = typename front<decltype(std::declval<T>().transition_table())>::type;
+// };
+
 
 template<typename FsmT, typename = void_t<>> struct has_transition_table : std::false_type { };
 template<typename FsmT>
