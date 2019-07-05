@@ -97,7 +97,7 @@ struct tryExit<State, true> {
     template<typename FsmT>
     constexpr inline void operator()(FsmT&& fsm) const noexcept
     {
-        exitCurrentState<typename FsmT::Indices>{}(std::forward<FsmT>(fsm));
+        exitCurrentState<typename std::decay_t<FsmT>::Indices>{}(std::forward<FsmT>(fsm));
     }
 };
 

@@ -22,10 +22,12 @@ class Fsm<Impl, typelist<States...>>
 {
     using Base = back::Fsm_impl<Make_index_sequence<sizeof...(States)>, States...>;
 public:
+    // TODO: Make this private and create an accessor trait
     using Indices = Make_index_sequence<sizeof...(States)>;
     using InitialState = typename initial_state_or<Impl,
                                                    typename front<typelist<States...>>::type
                                                   >::type;
+    using EntryPolicy = typename get_entry_policy<Impl>::type;
 
     constexpr Fsm() noexcept = default;
 

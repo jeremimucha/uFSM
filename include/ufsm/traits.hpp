@@ -75,7 +75,23 @@ template<typename T> struct get_initial_state {
 // template<typename T> struct get_initial_state<T, false> {
 //     using type = typename front<decltype(std::declval<T>().transition_table())>::type;
 // };
+template<typename FsmT, typename = void_t<>> struct hasEntryPolicyT : std::false_type { };
+template<typename FsmT>
+struct hasEntryPolicyT<FsmT, void_t<typename FsmT::EntryPolicy>> : std::true_type { };
+template<typename FsmT>
+constexpr inline auto hasEntryPolicy{hasEntryPolicyT<FsmT>::value};
 
+struct InitialStateEntryPolicy { };
+struct CurrentStateEntryPolicy { };
+
+template<typename FsmT, bool = hasEntryPolicy<std::decay_t<FsmT>>>
+struct get_entry_policy {
+    using type = InitialStateEntryPolicy;
+};
+template<typename FsmT>
+struct get_entry_policy<FsmT, true> {
+    using type = typename FsmT::EntryPolicy;
+};
 
 template<typename FsmT, typename = void_t<>> struct has_transition_table : std::false_type { };
 template<typename FsmT>
