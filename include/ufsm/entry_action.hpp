@@ -29,8 +29,10 @@ constexpr inline auto has_entry_v{has_entry<State,FsmT>::value};
 template<typename State, bool = isFsm<State>>
 struct tryEnter;
 
-template<typename State, typename = get_entry_policy<std::decay_t<State>>>
-struct propagateEntry;
+template<typename State, typename = typename get_entry_policy<std::decay_t<State>>::type>
+struct propagateEntry {
+    constexpr inline void operator()(State const&) const noexcept {/* nop */}
+};
 } // namespace detail
 
 template<typename FsmT_, typename State_,
@@ -50,7 +52,8 @@ struct FsmEntry<FsmT_, State_, true> {
         std::forward<State>(state).entry(std::forward<FsmT>(fsm));
         // detail::trySetInitialState<std::decay_t<State>>{}(std::forward<State>(state));
         // or if we want to remember the last state:
-        detail::tryEnter<std::decay_t<State>>{}(std::forward<State>(state));
+        // detail::tryEnter<std::decay_t<State>>{}(std::forward<State>(state));
+        detail::propagateEntry<std::decay_t<State>>{}(std::forward<State>(state));
     }
 };
 
@@ -80,7 +83,7 @@ template<typename Indices> struct enterCurrentState;
 template<>
 struct enterCurrentState<Index_sequence<>> {
     template<typename FsmT>
-    constexpr inline void operator()(FsmT&&) const noexcept { };
+    constexpr inline void operator()(FsmT&&) const noexcept { }
 };
 
 template<size_type I, size_type... Is>
@@ -107,13 +110,21 @@ struct tryEnter<State, true> {
         enterCurrentState<typename std::decay_t<FsmT>::Indices>{}(std::forward<FsmT>(fsm));
     }
 };
-template<typename State, typename>
-struct propagateEntry {
-    constexpr inline void operator()(State const&) const noexcept { }
-};
+
 template<typename State>
 struct propagateEntry<State, InitialStateEntryPolicy> {
+    template<typename FsmT>
+    constexpr inline void operator()(FsmT&& fsm) {
+        detail::trySetInitialState<std::decay_t<FsmT>>{}(std::forward<FsmT>(fsm));
+    }
+};
 
+template<typename State>
+struct propagateEntry<State, CurrentStateEntryPolicy> {
+    template<typename FsmT>
+    constexpr inline void operator()(FsmT&& fsm) {
+        detail::tryEnter<std::decay_t<FsmT>>{}(std::forward<FsmT>(fsm));
+    }
 };
 } // namespace detail
 

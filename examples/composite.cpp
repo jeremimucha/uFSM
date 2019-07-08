@@ -20,9 +20,7 @@ struct E {
 class Composite;
 class Sub;
 struct Idle {
-    template<typename SM> void entry(SM const&) const noexcept {
-
-    }
+    template<typename SM> void entry(SM const&) const noexcept { }
     template<typename SM> void exit(SM const&) const noexcept { }
 };  // empty initial state
 class C1 {
@@ -31,6 +29,9 @@ public:
     void exit(Composite const&) const { }
 };
 class S1 {
+public:
+    template<typename SM> void entry(SM const&) const noexcept { }
+    template<typename SM> void exit(SM const&) const noexcept { }
 };
 class Final {
 };  // empty terminating state
@@ -47,13 +48,14 @@ public:
 
     // constexpr inline auto initial_state() const noexcept { return ufsm::initial_state<Idle>; }
     using InitialState = Idle;
+    using EntryPolicy = ufsm::CurrentStateEntryPolicy;
 
     constexpr inline auto transition_table() const noexcept
     {
         using namespace ufsm;
         return make_transition_table(
                 make_entry(from_state<Idle>, event<e::C>, next_state<S1>),
-                make_entry(from_state<S1>, event<e::D>, next_state<Idle>)
+                make_entry(from_state<S1>, event<e::D>, next_state<S1>)
             );
     }
 };
@@ -88,6 +90,9 @@ inline void send_events(SM&& fsm, Events&&... events) noexcept
 int main()
 {
     ufsm::Fsm<Composite> sm{ufsm::initial_state_v<Idle>};
+    send_events(sm,
+        e::A{}, e::B{}, e::C{}, e::D{}, e::E{}
+    );
     send_events(sm,
         e::A{}, e::B{}, e::C{}, e::D{}, e::E{}
     );
