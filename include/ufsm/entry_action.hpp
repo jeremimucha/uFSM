@@ -79,6 +79,8 @@ constexpr inline void fsm_entry(FsmT&& fsm, State&& state) noexcept
 
 namespace detail
 {
+// TODO: optimization - narrow down Indices to only those referring to states which actually
+// do implement an entry-action
 template<typename Indices> struct enterCurrentState;
 template<>
 struct enterCurrentState<Index_sequence<>> {

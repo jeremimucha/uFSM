@@ -41,9 +41,9 @@ struct FsmExit<FsmT_, State_, true> {
     template<typename FsmT, typename State>
     constexpr inline void operator()(FsmT&& fsm, State&& state) noexcept
     {
+        detail::tryExit<std::decay_t<State>>{}(std::forward<State>(state));
         logging::fsm_log_exit(fsm, state);
         std::forward<State>(state).exit(std::forward<FsmT>(fsm));
-        detail::tryExit<std::decay_t<State>>{}(std::forward<State>(state));
     }
 };
 
@@ -68,6 +68,8 @@ constexpr inline void fsm_exit(FsmT&& fsm, State&& state) noexcept
 
 namespace detail
 {
+// TODO: optimization - narrow down the Indices to only those that refer to states
+// which actually do have an exit action
 template<typename Indices> struct exitCurrentState;
 template<>
 struct exitCurrentState<Index_sequence<>> {
