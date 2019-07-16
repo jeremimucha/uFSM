@@ -114,8 +114,7 @@ dispatch_event(FsmT&& fsm, Event&& event, Index_sequence<Idx,Idxs...>) noexcept
         using event_t = std::decay_t<Event>;
         // auto&& state = Get<Idx>(fsm);
         decltype(auto) state_or_fsmstate = Get<Idx>(fsm);
-        // try_dispatch_event(state, event) -> call state.dispatch_event(event) if state is Fsm
-        detail::tryDispatch<state_or_fsmstate_t>{}(state_or_fsmstate, event);
+
         // down from here - cast to the actual State type (if state is Fsm)
         auto&& state = detail::as_base_state(state_or_fsmstate);
         logging::fsm_log_event(fsm, state, event);
@@ -126,6 +125,7 @@ dispatch_event(FsmT&& fsm, Event&& event, Index_sequence<Idx,Idxs...>) noexcept
         //     std::forward<FsmT>(fsm), std::forward<decltype(state)>(state));
         StateTransition<event_t, std::decay_t<FsmT>, state_t>{}(
             std::forward<FsmT>(fsm), std::forward<decltype(state)>(state));
+        detail::tryDispatch<state_or_fsmstate_t>{}(state_or_fsmstate, event);
     }
     else if constexpr (sizeof...(Idxs) != 0) {
         dispatch_event(

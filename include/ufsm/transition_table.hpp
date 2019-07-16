@@ -151,6 +151,12 @@ constexpr auto make_entry(detail::state_t<State>, detail::event_t<Event>,
     return TransitionEntry<State,Event,NextState,void,void>{};
 }
 
+template<typename State, typename Event, typename Guard, typename Action>
+constexpr auto make_entry(detail::state_t<State>, detail::event_t<Event>, Guard guard, Action action) noexcept
+{
+    return TransitionEntry<State, Event, void, Guard, Action>{std::move(guard), std::move(action)};
+}
+
 template<typename State, typename Event, typename NextState, typename Guard>
 constexpr auto make_gentry(detail::state_t<State>, detail::event_t<Event>,
                            detail::next_state_t<NextState>, Guard guard) noexcept
@@ -158,11 +164,23 @@ constexpr auto make_gentry(detail::state_t<State>, detail::event_t<Event>,
     return TransitionEntry<State,Event,NextState,Guard,void>{std::move(guard)};
 }
 
+template<typename State, typename Event, typename Guard>
+constexpr auto make_gentry(detail::state_t<State>, detail::event_t<Event>, Guard guard) noexcept
+{
+    return TransitionEntry<State, Event, void, Guard, void>{std::move(guard)};
+}
+
 template<typename State, typename Event, typename NextState, typename Action>
 constexpr auto make_aentry(detail::state_t<State>, detail::event_t<Event>,
                            detail::next_state_t<NextState>, Action action) noexcept
 {
     return TransitionEntry<State,Event,NextState,void,Action>{std::move(action)};
+}
+
+template<typename State, typename Event, typename Action>
+constexpr auto make_aentry(detail::state_t<State>, detail::event_t<Event>, Action action) noexcept
+{
+    return TransitionEntry<State, Event, void, void, Action>{std::move(action)};
 }
 
 namespace detail

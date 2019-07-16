@@ -40,13 +40,10 @@ class Final {
 class Sub {
     static inline trace_logger<Sub> logger_{ };
 public:
-    template<typename SM>
-    void entry(SM const&) const { }
-    template<typename SM>
-    void exit(SM const&) const { }
+    template<typename SM> void entry(SM const&) const { }
+    template<typename SM> void exit(SM const&) const { }
     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
 
-    // constexpr inline auto initial_state() const noexcept { return ufsm::initial_state<Idle>; }
     using InitialState = Idle;
     using EntryPolicy = ufsm::CurrentStateEntryPolicy;
 
