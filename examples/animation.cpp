@@ -52,8 +52,8 @@ struct animation_logger {
             << "]: guard [" << ufsm::logging::get_type_name<Guard>() << "]"
             << (result ? " [OK]" : " [Reject]") << "\n";
     }
-    template<typename Action>
-    void log_action(Animation const&, Action const&) const noexcept
+    template<typename Action, typename Event>
+    void log_action(Animation const&, Action const&, Event const&) const noexcept
     {
         std::cerr << "[" << ufsm::logging::get_type_name<Animation>()
             << "]: action [" << ufsm::logging::get_type_name<Action>() << "]\n";
@@ -110,7 +110,8 @@ public:
         constexpr bool operator()(Animation const&) const noexcept {return true;}
     };
     struct action1 {
-        void operator()(Animation const&) const {
+        template<typename Event>
+        void operator()(Animation const&, Event&&) const {
             // std::cerr << __PRETTY_FUNCTION__ << "\n";
         }
     };
@@ -134,7 +135,7 @@ public:
         return make_transition_table(
             make_entry(from_state<sIdle>, event<ePlay>, next_state<sAnimating>, guard1{}, action1{}),
             make_entry(from_state<sAnimating>, event<eUpdate>, next_state<sIdle>)
-                .add_guard([](Animation const&)noexcept{return false;}),
+                .add_guard([](Animation const&, auto&& /* event */)noexcept{return false;}),
             make_entry(from_state<sAnimating>,event<ePause>,next_state<sPaused>),
             make_entry(from_state<sAnimating>,event<eStop>,next_state<sIdle>),
             make_entry(from_state<sPaused>,event<ePlay>,next_state<sAnimating>),
@@ -214,7 +215,8 @@ struct testguard2 {
 };
 
 struct testaction {
-    inline void operator()(Animation const&) const {
+    template<typename Event>
+    inline void operator()(Animation const&, Event&& event) const {
         std::cerr << "testaction\n";
     }
 };

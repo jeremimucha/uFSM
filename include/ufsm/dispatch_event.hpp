@@ -124,7 +124,10 @@ dispatch_event(FsmT&& fsm, Event&& event, Index_sequence<Idx,Idxs...>) noexcept
         // StateTransition<event_t, std::decay_t<FsmT>, state_t>{}(
         //     std::forward<FsmT>(fsm), std::forward<decltype(state)>(state));
         StateTransition<event_t, std::decay_t<FsmT>, state_t>{}(
-            std::forward<FsmT>(fsm), std::forward<decltype(state)>(state));
+            std::forward<FsmT>(fsm), std::forward<decltype(state)>(state), std::forward<Event>(event));
+        // dispatch the event to the underlying state here - after state transition,
+        // to give it a change to react to the state change?
+        // this is probably wrong - sould tryDispatch to the nested states first
         detail::tryDispatch<state_or_fsmstate_t>{}(state_or_fsmstate, event);
     }
     else if constexpr (sizeof...(Idxs) != 0) {

@@ -60,20 +60,20 @@ template<typename FsmT, typename Guard/* , typename Event */>
 constexpr inline auto has_log_guard_v{has_log_guard<FsmT, Guard/* , Event */>::value};
 
 // log action
-template<typename FsmT, typename Action, /* typename Event, */
+template<typename FsmT, typename Action, typename Event,
          typename = void_t<>>
 struct has_log_action : std::false_type { };
 #if defined(FSM_DEBUG_LOG)
-template<typename FsmT, typename Action/* , typename Event */>
-struct has_log_action<FsmT, Action, /* Event, */
+template<typename FsmT, typename Action, typename Event>
+struct has_log_action<FsmT, Action, Event,
     void_t<decltype(FsmT::logger().log_action(
-        std::declval<FsmT const&>(), std::declval<Action const&>()/* , std::declval<Event const&>() */))>>
+        std::declval<FsmT const&>(), std::declval<Action const&>(), std::declval<Event const&>()))>>
     : std::true_type
 {
 };
 #endif
-template<typename FsmT, typename Action/* , typename Event */>
-constexpr inline auto has_log_action_v{has_log_action<FsmT, Action/* , Event */>::value};
+template<typename FsmT, typename Action, typename Event>
+constexpr inline auto has_log_action_v{has_log_action<FsmT, Action, Event>::value};
 
 // log state change
 template<typename FsmT, typename SrcState, typename DstState,
@@ -202,27 +202,27 @@ noexcept(noexcept(detail::fsm_log_guard_impl<FsmT, Guard>{}(fsm, guard, result))
 namespace detail
 {
 
-template<typename FsmT, typename Action, bool = has_log_action_v<FsmT, Action>>
+template<typename FsmT, typename Action, typename Event, bool = has_log_action_v<FsmT, Action, Event>>
 struct fsm_log_action_impl {
-    constexpr inline void operator()(FsmT const&, Action const&) const noexcept { /* nop */ }
+    constexpr inline void operator()(FsmT const&, Action const&, Event const&) const noexcept { /* nop */ }
 };
 
-template<typename FsmT, typename Action>
-struct fsm_log_action_impl<FsmT, Action, true> {
-    inline void operator()(FsmT const& fsm, Action const& action) const
-    noexcept(noexcept(FsmT::logger().log_action(fsm, action)))
+template<typename FsmT, typename Action, typename Event>
+struct fsm_log_action_impl<FsmT, Action, Event, true> {
+    inline void operator()(FsmT const& fsm, Action const& action, Event const& event) const
+    noexcept(noexcept(FsmT::logger().log_action(fsm, action, event)))
     {
-        FsmT::logger().log_action(fsm, action);
+        FsmT::logger().log_action(fsm, action, event);
     }
 };
 
 } // detail
 
-template<typename FsmT, typename Action>
-inline void fsm_log_action(FsmT const& fsm, Action const& action)
-noexcept(noexcept(detail::fsm_log_action_impl<FsmT, Action>{}(fsm, action)))
+template<typename FsmT, typename Action, typename Event>
+inline void fsm_log_action(FsmT const& fsm, Action const& action, Event const& event)
+noexcept(noexcept(detail::fsm_log_action_impl<FsmT, Action, Event>{}(fsm, action, event)))
 {
-    detail::fsm_log_action_impl<FsmT, Action>{}(fsm, action);
+    detail::fsm_log_action_impl<FsmT, Action, Event>{}(fsm, action, event);
 }
 /* --------------------------------------------------------------------------------------------- */
 
