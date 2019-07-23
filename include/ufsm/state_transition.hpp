@@ -8,6 +8,7 @@
 #include "entry_action.hpp"
 #include "exit_action.hpp"
 #include "logging.hpp"
+#include "enter_substate.hpp"
 
 
 namespace ufsm
@@ -145,8 +146,13 @@ struct StateTransition_impl<FsmT_, TTraits_, false, true> {
         fsm_action(fsm, event, ttraits);
         using fsm_statelist = get_state_list_t<fsm_t>;
         constexpr auto next_state_idx = state_index_v<fsm_statelist, Next_state<ttraits_t>>;
+        // support explicitly specifying which substate should be entered on transition here?
+        // We could get a `substate<Targetsubstate>` from the ttraits_t and enter that substate
+        // explicitly before setting the next state
         fsm.state(next_state_idx);
         auto&& next_state = Get<next_state_idx>(fsm);
+        using next_state_t = std::decay_t<decltype(next_state)>;
+        enter_substate<next_state_t, ttraits_t>{}(next_state, ttraits);
         logging::fsm_log_state_change(fsm, state, next_state);
         fsm_entry(std::forward<FsmT>(fsm), std::forward<decltype(next_state)>(next_state));
     }
@@ -164,10 +170,13 @@ struct StateTransition_impl<FsmT_, TTraits_, true, true> {
         if (guard_result) {
             fsm_exit(fsm, state);
             fsm_action(fsm, event, ttraits);
+            using ttraits_t = std::decay_t<TTraits>;
             using fsm_statelist = get_state_list_t<std::decay_t<FsmT>>;
-            constexpr auto next_state_idx = state_index_v<fsm_statelist, Next_state<std::decay_t<TTraits>>>;
+            constexpr auto next_state_idx = state_index_v<fsm_statelist, Next_state<ttraits_t>>;
             fsm.state(next_state_idx);
             auto&& next_state = Get<next_state_idx>(fsm);
+            using next_state_t = std::decay_t<decltype(next_state)>;
+            enter_substate<next_state_t, ttraits_t>{}(next_state, ttraits);
             logging::fsm_log_state_change(fsm, state, next_state);
             fsm_entry(std::forward<FsmT>(fsm), std::forward<decltype(next_state)>(next_state));
         }

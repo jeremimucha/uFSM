@@ -114,7 +114,7 @@ dispatch_event(FsmT&& fsm, Event&& event, Index_sequence<Idx,Idxs...>) noexcept
         using event_t = std::decay_t<Event>;
         // auto&& state = Get<Idx>(fsm);
         decltype(auto) state_or_fsmstate = Get<Idx>(fsm);
-
+        detail::tryDispatch<state_or_fsmstate_t>{}(state_or_fsmstate, event);
         // down from here - cast to the actual State type (if state is Fsm)
         auto&& state = detail::as_base_state(state_or_fsmstate);
         logging::fsm_log_event(fsm, state, event);
@@ -128,7 +128,7 @@ dispatch_event(FsmT&& fsm, Event&& event, Index_sequence<Idx,Idxs...>) noexcept
         // dispatch the event to the underlying state here - after state transition,
         // to give it a change to react to the state change?
         // this is probably wrong - sould tryDispatch to the nested states first
-        detail::tryDispatch<state_or_fsmstate_t>{}(state_or_fsmstate, event);
+        // detail::tryDispatch<state_or_fsmstate_t>{}(state_or_fsmstate, event);
     }
     else if constexpr (sizeof...(Idxs) != 0) {
         dispatch_event(

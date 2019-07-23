@@ -8,17 +8,18 @@ namespace ufsm
 {
 
 template<typename State, typename Event, typename NextState = void,
-         typename Guard = void, typename Action = void>
+         typename Guard = void, typename Action = void, typename Substate = void>
 struct TransitionEntry {
     using state_type = State;
     using event_type = Event;
     using next_state = NextState;
+    using substate_type = Substate;
     Guard guard{};
     Action action{};
 };
 
 template<typename State, typename Event, typename NextState>
-struct TransitionEntry<State, Event, NextState, void, void> {
+struct TransitionEntry<State, Event, NextState, void, void, void> {
     using state_type = State;
     using event_type = Event;
     using next_state = NextState;
@@ -36,8 +37,28 @@ struct TransitionEntry<State, Event, NextState, void, void> {
     }
 };
 
+template<typename State, typename Event, typename NextState, typename Substate>
+struct TransitionEntry<State, Event, NextState, void, void, Substate> {
+    using state_type = State;
+    using event_type = Event;
+    using next_state = NextState;
+    using substate_type = Substate;
+    template<typename Action>
+    constexpr inline auto add_action(Action&& action) noexcept
+    {
+        return TransitionEntry<State,Event,NextState,void,std::decay_t<Action>>{
+            std::forward<Action>(action)};
+    }
+    template<typename Guard>
+    constexpr inline auto add_guard(Guard&& guard) noexcept
+    {
+        return TransitionEntry<State,Event,NextState,std::decay_t<Guard>,void>{
+            std::forward<Guard>(guard)};
+    }
+};
+
 template<typename State, typename Event, typename NextState, typename Guard>
-struct TransitionEntry<State, Event, NextState, Guard, void> {
+struct TransitionEntry<State, Event, NextState, Guard, void, void> {
     using state_type = State;
     using event_type = Event;
     using next_state = NextState;
@@ -50,8 +71,23 @@ struct TransitionEntry<State, Event, NextState, Guard, void> {
     }
 };
 
+template<typename State, typename Event, typename NextState, typename Guard, typename Substate>
+struct TransitionEntry<State, Event, NextState, Guard, void, Substate> {
+    using state_type = State;
+    using event_type = Event;
+    using next_state = NextState;
+    using substate_type = Substate;
+    Guard guard{};
+    template<typename Action>
+    constexpr inline auto add_action(Action&& action) noexcept
+    {
+        return TransitionEntry<State,Event,NextState,Guard,std::decay_t<Action>>{
+            std::move(guard), std::forward<Action>(action)};
+    }
+};
+
 template<typename State, typename Event, typename NextState, typename Action>
-struct TransitionEntry<State, Event, NextState, void, Action> {
+struct TransitionEntry<State, Event, NextState, void, Action, void> {
     using state_type = State;
     using event_type = Event;
     using next_state = NextState;
@@ -65,8 +101,24 @@ struct TransitionEntry<State, Event, NextState, void, Action> {
     }
 };
 
+template<typename State, typename Event, typename NextState, typename Action, typename Substate>
+struct TransitionEntry<State, Event, NextState, void, Action, Substate> {
+    using state_type = State;
+    using event_type = Event;
+    using next_state = NextState;
+    using substate_type = Substate;
+    Action action{};
+    template<typename Guard>
+    constexpr inline auto add_guard(Guard&& guard) noexcept
+    {
+        return TransitionEntry<State,Event,NextState,std::decay_t<Guard>,Action>{
+            std::forward<Guard>(guard), std::move(action)
+        };
+    }
+};
+
 template<typename State, typename Event, typename Guard, typename Action>
-struct TransitionEntry<State, Event, void, Guard, Action>
+struct TransitionEntry<State, Event, void, Guard, Action, void>
 {
     using state_type = State;
     using event_type = Event;
@@ -75,7 +127,7 @@ struct TransitionEntry<State, Event, void, Guard, Action>
 };
 
 template<typename State, typename Event, typename Action>
-struct TransitionEntry<State, Event, void, void, Action>
+struct TransitionEntry<State, Event, void, void, Action, void>
 {
     using state_type = State;
     using event_type = Event;
@@ -95,9 +147,10 @@ struct TransitionTraits : public Entries...
 
 // TODO: It might be better to return by value. Define a traits type for the return type
 // return by value if sizeof(TransitionEntry) < 2 * sizeof(double) ?
-template<typename State, typename Event, typename NextState, typename Guard, typename Action>
-inline constexpr TransitionEntry<State,Event,NextState,Guard,Action> const&
-Get_transition_traits(TransitionEntry<State,Event,NextState,Guard,Action> const& te) noexcept
+template<typename State, typename Event, typename NextState,
+         typename Guard, typename Action, typename Substate>
+inline constexpr TransitionEntry<State,Event,NextState,Guard,Action,Substate> const&
+Get_transition_traits(TransitionEntry<State,Event,NextState,Guard,Action,Substate> const& te) noexcept
 {
     return te;
 }
@@ -130,11 +183,13 @@ namespace detail
 template<typename T> struct state_t { using type = T; };
 template<typename T> struct event_t { using type = T; };
 template<typename T> struct next_state_t { using type = T; };
+template<typename T> struct substate_t { using type = T; };
 } // namespace detail
 
 template<typename T> constexpr inline auto from_state = detail::state_t<T>{};
 template<typename T> constexpr inline auto event = detail::event_t<T>{};
 template<typename T> constexpr inline auto next_state = detail::next_state_t<T>{};
+template<typename T> constexpr inline auto substate = detail::substate_t<T>{};
 
 
 template<typename State, typename Event, typename NextState, typename Guard, typename Action>
@@ -181,6 +236,34 @@ template<typename State, typename Event, typename Action>
 constexpr auto make_aentry(detail::state_t<State>, detail::event_t<Event>, Action action) noexcept
 {
     return TransitionEntry<State, Event, void, void, Action>{std::move(action)};
+}
+
+template<typename State, typename Event, typename NextState, typename Substate, typename Guard, typename Action>
+constexpr auto make_entry(detail::state_t<State>, detail::event_t<Event>,
+                          detail::next_state_t<NextState>, detail::substate_t<Substate>, Guard guard, Action action) noexcept
+{
+    return TransitionEntry<State,Event,NextState,Guard,Action,Substate>{std::move(guard), std::move(action)};
+}
+
+template<typename State, typename Event, typename NextState, typename Substate>
+constexpr auto make_entry(detail::state_t<State>, detail::event_t<Event>,
+                          detail::next_state_t<NextState>, detail::substate_t<Substate>) noexcept
+{
+    return TransitionEntry<State,Event,NextState,void,void,Substate>{};
+}
+
+template<typename State, typename Event, typename NextState, typename Substate, typename Guard>
+constexpr auto make_gentry(detail::state_t<State>, detail::event_t<Event>,
+                           detail::next_state_t<NextState>, detail::substate_t<Substate>, Guard guard) noexcept
+{
+    return TransitionEntry<State,Event,NextState,Guard,void,Substate>{std::move(guard)};
+}
+
+template<typename State, typename Event, typename NextState, typename Substate, typename Action>
+constexpr auto make_aentry(detail::state_t<State>, detail::event_t<Event>,
+                           detail::next_state_t<NextState>, detail::substate_t<Substate>, Action action) noexcept
+{
+    return TransitionEntry<State,Event,NextState,void,Action,Substate>{std::move(action)};
 }
 
 namespace detail

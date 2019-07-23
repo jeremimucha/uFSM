@@ -17,30 +17,57 @@ struct OFF { };
 
 struct Calculator;
 struct On;
-struct Off;
+struct Off {
+    template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    template<typename SM> constexpr void exit(SM const&) const noexcept { }
+};
 struct Ready;
-struct Result { };
-struct Begin { };
-struct Operand1;
-struct Zero1 { };
-struct Int1 { };
-struct Fraction1 { };
-struct Negated1 { };
-struct Zero2;
-struct Int2;
-struct Fraction2;
-struct Operand2;
-struct OpEntered;
-struct Negated2;
+struct Result {
+    template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    template<typename SM> constexpr void exit(SM const&) const noexcept { }
+};
+struct Begin {
+    template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    template<typename SM> constexpr void exit(SM const&) const noexcept { }
+};
+template<std::size_t I> struct Operand;
+struct Zero {
+    template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    template<typename SM> constexpr void exit(SM const&) const noexcept { }
+};
+struct Int {
+    template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    template<typename SM> constexpr void exit(SM const&) const noexcept { }
+};
+struct Fraction {
+    template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    template<typename SM> constexpr void exit(SM const&) const noexcept { }
+};
+template<std::size_t I> struct Negated {
+    template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    template<typename SM> constexpr void exit(SM const&) const noexcept { }
+};
+using Negated1 = Negated<1>;
+using Negated2 = Negated<2>;
+
+// struct Zero2;
+// struct Int2;
+// struct Fraction2;
+// struct Operand2;
+struct OpEntered { };
+// struct Negated2;
 struct Error;
 
 struct Init { };
-struct Monostate { };
 
 struct Ready
 {
     static inline trace_logger<Ready> logger_{};
     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
+
+    template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    template<typename SM> constexpr void exit(SM const&) const noexcept { }
+
     using InitialState = Begin;
     constexpr inline auto transition_table() noexcept {
         using namespace ufsm;
@@ -51,52 +78,93 @@ struct Ready
     }
 };
 
-struct Operand1 {
-    double value;
+template<std::size_t I>
+struct Operand {
+    int integral;
+    int fractional;
 
-    static inline trace_logger<Ready> logger_{};
+    static inline trace_logger<Operand> logger_{};
     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
-    using InitialState = Zero1;
+
+    template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    template<typename SM> constexpr void exit(SM const&) const noexcept { }
+
+    using InitialState = Zero;
+    // States which we'd like to explicitly enter substates for
+    // need to set the CurrentStateEntryPolicy - otherwise the state will be reset
+    // to the initial state on entry
+    using EntryPolicy = ufsm::CurrentStateEntryPolicy;
     constexpr inline auto transition_table() noexcept {
         using namespace ufsm;
         return make_transition_table(
-            make_entry(from_state<Zero1>, event<e::Digit_1_9>, next_state<Int1>),
-            make_entry(from_state<Zero1>, event<e::Point>, next_state<Fraction1>),
-            // make_aentry(from_state<Int1>, event<e::Digit_0>, [this](Operand1& state)),
-            make_entry(from_state<Int1>, event<e::Point>, next_state<Fraction1>)
+            make_entry(from_state<Zero>, event<e::Digit_1_9>, next_state<Int>),
+            make_entry(from_state<Zero>, event<e::Point>, next_state<Fraction>),
+            make_aentry(from_state<Int>, event<e::Digit_0>, [](Operand& state, e::Digit_0){
+                state.integral *= 10;
+            }),
+            make_aentry(from_state<Int>, event<e::Digit_1_9>, [](Operand& state, e::Digit_1_9 e){
+                state.integral *= 10;
+                state.integral + e.value;
+            }),
+            make_entry(from_state<Int>, event<e::Point>, next_state<Fraction>),
+            make_aentry(from_state<Fraction>, event<e::Digit_0>, [](Operand& state, e::Digit_0){
+                state.fractional *= 10;
+            }),
+            make_aentry(from_state<Fraction>, event<e::Digit_0>, [](Operand& state, e::Digit_1_9 e){
+                state.fractional *= 10;
+                state.fractional += e.value;
+            })
         );
     }
 };
+using Operand1 = Operand<1>;
+using Operand2 = Operand<2>;
 
 struct On {
     double lhs_operand;
     double rhs_operand;
     char op;
 
+    static inline trace_logger<On> logger_{};
+    static constexpr inline decltype(auto) logger() noexcept { return logger_; }
+
+    template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    template<typename SM> constexpr void exit(SM const&) const noexcept { }
+
     using InitialState = Ready;
     constexpr inline auto transition_table() noexcept
     {
         using namespace ufsm;
         return make_transition_table(
-            make_entry(from_state<Ready>, event<e::Digit_0>, next_state<Operand1>),
-            make_entry(from_state<Ready>, event<e::Digit_1_9>, next_state<Operand1>),
-            make_entry(from_state<Ready>, event<e::Point>, next_state<Operand1>),
+            make_aentry(from_state<Ready>, event<e::Digit_0>, next_state<Operand1>, substate<Zero>),
+            make_entry(from_state<Ready>, event<e::Digit_1_9>, next_state<Operand1>, substate<Int>),
+            make_entry(from_state<Ready>, event<e::Point>, next_state<Operand1>, substate<Fraction>),
             make_entry(from_state<Ready>, event<e::OpMinus>, next_state<Negated1>),
             make_entry(from_state<Ready>, event<e::Op>, next_state<OpEntered>),
             make_entry(from_state<Negated1>, event<e::Digit_0>, next_state<Operand1>),
             make_entry(from_state<Negated1>, event<e::Digit_1_9>, next_state<Operand1>),
             make_entry(from_state<Negated1>, event<e::Point>, next_state<Operand1>),
-            make_entry(from_state<Operand1>, event<e::CE>, next_state<Ready>)
-            // make_entry(from_state<Operand1>, event<e::Op>, next_state<OpEntered>),
-            // make_entry(from_state<OpEntered>, event<e::Digit_0>, next_state<Zero2>),
-            // make_entry(from_state<OpEntered>, event<e::Digit_1_9>, next_state<Int2>),
-            // make_entry(from_state<OpEntered>, event<e::Point>, next_state<Fraction2>),
-            // make_entry(from_state<OpEntered>, event<e::OpMinus>, next_state<Negated2>)
+            make_entry(from_state<Operand1>, event<e::CE>, next_state<Ready>),
+            make_entry(from_state<Operand1>, event<e::Op>, next_state<OpEntered>),
+            make_entry(from_state<OpEntered>, event<e::Digit_0>, next_state<Operand2>),
+            make_entry(from_state<OpEntered>, event<e::Digit_1_9>, next_state<Operand2>),
+            make_entry(from_state<OpEntered>, event<e::Point>, next_state<Operand2>),
+            make_entry(from_state<OpEntered>, event<e::OpMinus>, next_state<Operand2>),
+            make_entry(from_state<Operand2>, event<e::CE>, next_state<OpEntered>),
+            make_entry(from_state<Operand2>, event<e::Op>, next_state<OpEntered>),
+            make_entry(from_state<Operand2>, event<e::OpMinus>, next_state<Negated2>),
+            make_entry(from_state<Operand2>, event<e::Equals>, next_state<Ready>)
         );
     }
 };
 
 struct Calculator {
+    static inline trace_logger<Calculator> logger_{};
+    static constexpr inline decltype(auto) logger() noexcept { return logger_; }
+
+    template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    template<typename SM> constexpr void exit(SM const&) const noexcept { }
+
     using InitialState = On;
     constexpr inline auto transition_table() noexcept
     {
@@ -119,6 +187,6 @@ int main()
 {
     ufsm::Fsm<Calculator> calculator;
     send_events(calculator,
-        e::Digit_0{}
+        e::Digit_1_9{}
     );
 }
