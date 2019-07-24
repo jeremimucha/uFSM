@@ -1,16 +1,21 @@
 # uFSM todolist
 
 cleanup:
-    [x]     Implement separate wrappers for state, event and next-state for the front end
+    [ ]     We do not want to decay the types passed to entry/exit - the decision if the member
+            function can be called (has_entry, has_exit) needs to be taken while taking qualifiers
+            into consideration. We should also consider if that's not the case for other
+            actions - guard, action, handle_event, etc.
     [ ]     Fix naming for consistency
-    [x]     Potential refactoring - see if it's possible to get rid of CRTP
-                * Type of the transition_table() should be inferable. A typelist could be
-                constructed based on the `State` of each transition_table entry - it would need to
-                be filtered on construction to ensure that each `State` type is inserted exactly
-                once in the typelist. Given the `State` typelist it would no longer be necessaary
-                to have client code inherit from uFSM.
 
 features:
+    [ ]     We could support different signatures for various actions - e.g. we may want to support
+            both `void entry(SM&)` and `void entry(SM&, Event)` - same for all other actions.
+            Is this a good idea?
+    [ ]     Support eventless transitions? This would allow for intermediate states - states that
+            the control is just passing through while transitioning from one state to another.
+    [ ]     Propagate events down to nested state machines after an entry is triggered?
+            This would potentially allow for elimination of explicit `substate<S>` on transitions?
+            An alternative wold be to pass events to guards and actions. Coupling eventle
     [ ]     Implement orthogonal regions
 
 examples:

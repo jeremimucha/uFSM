@@ -36,7 +36,9 @@ struct Zero {
     template<typename SM> constexpr void exit(SM const&) const noexcept { }
 };
 struct Int {
-    template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    template<typename SM> constexpr void entry(SM const&) const noexcept {
+        std::cerr << "Hello\n";
+    }
     template<typename SM> constexpr void exit(SM const&) const noexcept { }
 };
 struct Fraction {
@@ -86,8 +88,11 @@ struct Operand {
     static inline trace_logger<Operand> logger_{};
     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
 
-    template<typename SM> constexpr void entry(SM const&) const noexcept { }
-    template<typename SM> constexpr void exit(SM const&) const noexcept { }
+    // template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    // template<typename SM> constexpr void exit(SM const&) const noexcept { }
+
+    constexpr void entry(On&) noexcept { }
+    constexpr void exit(On const&) noexcept { }
 
     using InitialState = Zero;
     // States which we'd like to explicitly enter substates for
@@ -104,7 +109,7 @@ struct Operand {
             }),
             make_aentry(from_state<Int>, event<e::Digit_1_9>, [](Operand& state, e::Digit_1_9 e){
                 state.integral *= 10;
-                state.integral + e.value;
+                state.integral += e.value;
             }),
             make_entry(from_state<Int>, event<e::Point>, next_state<Fraction>),
             make_aentry(from_state<Fraction>, event<e::Digit_0>, [](Operand& state, e::Digit_0){

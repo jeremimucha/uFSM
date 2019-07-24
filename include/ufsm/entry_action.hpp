@@ -36,7 +36,7 @@ struct propagateEntry {
 } // namespace detail
 
 template<typename FsmT_, typename State_,
-         bool HasEntry = detail::has_entry_v<State_, FsmT_>>
+         bool = detail::has_entry_v<State_, FsmT_>>
 struct FsmEntry {
     template<typename FsmT, typename State>
     constexpr inline void operator()(FsmT&&, State&&) noexcept { }
@@ -62,7 +62,10 @@ constexpr inline void fsm_entry(FsmT&& fsm, State&& state) noexcept
 {
     using fsm_t = std::decay_t<FsmT>;
     using state_t = std::decay_t<State>;
-    FsmEntry<fsm_t, state_t>{}(std::forward<FsmT>(fsm), std::forward<State>(state));
+    // FsmEntry<fsm_t, state_t>{}(std::forward<FsmT>(fsm), std::forward<State>(state));
+    // Whe should NOT decay here - we need to check if the entry action is callable
+    // for the specified FsmT and State including qualifiers
+    FsmEntry<FsmT, State>{}(std::forward<FsmT>(fsm), std::forward<State>(state));
 }
 
 // template<typename FsmT, typename State>
@@ -91,7 +94,7 @@ struct enterCurrentState<Index_sequence<>> {
 template<size_type I, size_type... Is>
 struct enterCurrentState<Index_sequence<I, Is...>> {
     template<typename FsmT>
-    constexpr inline void operator()(FsmT&& fsm) {
+    constexpr inline void operator()(FsmT&& fsm) const noexcept {
         if (I == fsm.state()) {
             fsm_entry(std::forward<FsmT>(fsm), Get<I>(std::forward<FsmT>(fsm)));
             return;
@@ -102,7 +105,8 @@ struct enterCurrentState<Index_sequence<I, Is...>> {
 
 template<typename State, bool>
 struct tryEnter {
-    constexpr inline void operator()(State const&) const noexcept {/* nop */}
+    template<typename State_>
+    constexpr inline void operator()(State_&&) const noexcept {/* nop */}
 };
 
 template<typename State>
@@ -116,7 +120,7 @@ struct tryEnter<State, true> {
 template<typename State>
 struct propagateEntry<State, InitialStateEntryPolicy> {
     template<typename FsmT>
-    constexpr inline void operator()(FsmT&& fsm) {
+    constexpr inline void operator()(FsmT&& fsm) const noexcept {
         detail::trySetInitialState<std::decay_t<FsmT>>{}(std::forward<FsmT>(fsm));
     }
 };
@@ -124,7 +128,7 @@ struct propagateEntry<State, InitialStateEntryPolicy> {
 template<typename State>
 struct propagateEntry<State, CurrentStateEntryPolicy> {
     template<typename FsmT>
-    constexpr inline void operator()(FsmT&& fsm) {
+    constexpr inline void operator()(FsmT&& fsm) const noexcept {
         detail::tryEnter<std::decay_t<FsmT>>{}(std::forward<FsmT>(fsm));
     }
 };

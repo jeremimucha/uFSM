@@ -39,7 +39,7 @@ struct FsmAction {
 template <typename FsmT_, typename Event_, typename TTraits_>
 struct FsmAction<FsmT_, Event_, TTraits_, true> {
     template <typename FsmT, typename Event, typename TTraits>
-    constexpr inline void operator()(FsmT&& fsm, Event&& event, TTraits&& ttraits) noexcept
+    constexpr inline void operator()(FsmT&& fsm, Event&& event, TTraits&& ttraits) const noexcept
     {
         static_assert(detail::is_valid_action_v<decltype(ttraits.action), FsmT, Event>);
         logging::fsm_log_action(fsm, event, ttraits.action);
