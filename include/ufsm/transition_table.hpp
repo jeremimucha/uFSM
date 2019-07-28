@@ -278,7 +278,7 @@ struct build_state_list<Statelist<>, T, Ts...> : build_state_list<Statelist<T>, 
 // and ignoring it
 template<template<typename...>class Statelist, typename T, typename... Ts, typename... Ss>
 struct build_state_list<Statelist<Ss...>, T, Ts...>
-    : std::conditional_t<contains_v<Statelist<Ss...>, T>,
+    : std::conditional_t<Contains<Statelist<Ss...>, T>,
                          build_state_list<Statelist<Ss...>, Ts...>,
                          build_state_list<Statelist<Ss...,T>, Ts...>
                         >
@@ -303,7 +303,7 @@ using fsm_state_list_t = typename fsm_state_list<TTraits>::type;
 
 template<typename SM>
 struct get_fsm_state_list {
-    static_assert(has_transition_table_v<SM>,
+    static_assert(HasTransitionTable<SM>,
     "A uFSM client class must implement `constexpr inline auto transition_table()` member function"
     ", which constructs and returns a transition table via ufsm::make_transition_table");
     using type = fsm_state_list_t<decltype(std::declval<SM>().transition_table())>;

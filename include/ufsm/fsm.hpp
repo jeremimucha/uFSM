@@ -18,16 +18,16 @@ namespace ufsm
 
 template<typename Impl, typename... States>
 class Fsm<Impl, typelist<States...>>
-    : public Impl, public back::Fsm_impl<Make_index_sequence<sizeof...(States)>, States...>
+    : public Impl, public back::Fsm_impl<MakeIndexSequence<sizeof...(States)>, States...>
 {
-    using Base = back::Fsm_impl<Make_index_sequence<sizeof...(States)>, States...>;
+    using Base = back::Fsm_impl<MakeIndexSequence<sizeof...(States)>, States...>;
 public:
     // TODO: Make this private and create an accessor trait
-    using Indices = Make_index_sequence<sizeof...(States)>;
+    using Indices = MakeIndexSequence<sizeof...(States)>;
     using InitialState = typename initial_state_or<Impl,
                                                    typename front<typelist<States...>>::type
                                                   >::type;
-    using EntryPolicy = typename get_entry_policy<Impl>::type;
+    using EntryPolicy = GetEntryPolicy<Impl>;
 
     constexpr Fsm() noexcept = default;
 
@@ -35,19 +35,22 @@ public:
     constexpr explicit Fsm(initial_state<State> init_state) noexcept
         : Base{init_state}
     {
-        back::fsm_entry(*this, back::Get<state_index_v<typelist<States...>,State>>(*this));
+        // back::fsm_entry(*this, back::Get<StateIndex<typelist<States...>,State>>(*this));
+        back::fsmEntry<decltype(*this),
+            decltype(back::Get<StateIndex<typelist<States...>,State>>(*this))>{}(
+                *this, back::Get<StateIndex<typelist<States...>,State>>(*this));
     }
 
     template<typename State>
     constexpr void set_initial_state(initial_state<State> init_state) noexcept
     {
         Base::set_initial_state(init_state);
-        back::fsm_entry(*this, back::Get<state_index_v<typelist<States...>,State>>(*this));
+        back::fsm_entry(*this, back::Get<StateIndex<typelist<States...>,State>>(*this));
     }
 
     template<typename FsmT, typename Event, size_type Idx, size_type... Idxs>
     friend constexpr inline void
-    ::ufsm::back::dispatch_event(FsmT&& fsm, Event&& event, Index_sequence<Idx,Idxs...>) noexcept;
+    ::ufsm::back::dispatch_event(FsmT&& fsm, Event&& event, IndexSequence<Idx,Idxs...>) noexcept;
 
     template<typename Event>
     constexpr inline void dispatch_event(Event&& event) noexcept

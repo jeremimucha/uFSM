@@ -2,7 +2,6 @@
 
 #include <type_traits>
 #include <utility>
-// #include "transition_table.hpp"
 #include "fsmfwd.hpp"
 
 
@@ -12,16 +11,16 @@ namespace ufsm
 using size_type = int;
 
 template<size_type Idx>
-using Index_constant = std::integral_constant<size_type, Idx>;
+using IndexConstant = std::integral_constant<size_type, Idx>;
 
 template<size_type... Idxs>
-using Index_sequence = std::integer_sequence<size_type, Idxs...>;
+using IndexSequence = std::integer_sequence<size_type, Idxs...>;
 
 template<size_type N>
-using Make_index_sequence = std::make_integer_sequence<size_type, N>;
+using MakeIndexSequence = std::make_integer_sequence<size_type, N>;
 
 template<typename... Ts>
-using Index_sequence_for = Make_index_sequence<sizeof...(Ts)>;
+using IndexSequenceFor = MakeIndexSequence<sizeof...(Ts)>;
 
 template<typename...> struct typelist { };
 template<typename...> using void_t = void;
@@ -34,25 +33,19 @@ struct front<List<T, Ts...>> { using type = T; };
 template<template<typename...> class List>
 struct front<List<>> { };
 
-template<typename State> struct isFsmT : std::false_type { };
-template<typename Impl, typename States>
-struct isFsmT<::ufsm::Fsm<Impl, States>> : std::true_type { };
-template<typename State>
-constexpr inline auto isFsm{isFsmT<State>::value};
-
 struct AnyEvent_t { };
 constexpr inline AnyEvent_t AnyEvent{};
 
-template<typename C, typename T> struct contains_impl;
+template<typename C, typename T> struct ContainsTImpl;
 
 template<template<class...> class C, typename T, typename... Us>
-struct contains_impl<C<Us...>, T> : std::disjunction<std::is_same<T, Us>...> { };
+struct ContainsTImpl<C<Us...>, T> : std::disjunction<std::is_same<T, Us>...> { };
 
 template<typename C, typename T>
-struct contains_t : contains_impl<C,T> { };
+struct ContainsT : ContainsTImpl<C,T> { };
 
 template<typename C, typename T>
-static constexpr inline auto contains_v{contains_impl<C,T>::value};
+static constexpr inline auto Contains{ContainsTImpl<C,T>::value};
 
 template<typename T> struct initial_state { };
 template<typename T> constexpr inline auto initial_state_v{initial_state<T>{}};
@@ -72,99 +65,65 @@ struct initial_state_or<T, U, true> { using type = typename T::InitialState; };
 template<typename T> struct get_initial_state {
     using type = typename T::initial_state;
 };
-// template<typename T> struct get_initial_state<T, false> {
-//     using type = typename front<decltype(std::declval<T>().transition_table())>::type;
-// };
-template<typename FsmT, typename = void_t<>> struct hasEntryPolicyT : std::false_type { };
-template<typename FsmT>
-struct hasEntryPolicyT<FsmT, void_t<typename FsmT::EntryPolicy>> : std::true_type { };
-template<typename FsmT>
-constexpr inline auto hasEntryPolicy{hasEntryPolicyT<FsmT>::value};
 
-struct InitialStateEntryPolicy { };
-struct CurrentStateEntryPolicy { };
-
-template<typename FsmT, bool = hasEntryPolicy<std::decay_t<FsmT>>>
-struct get_entry_policy {
-    using type = InitialStateEntryPolicy;
-};
+template<typename FsmT, typename = void_t<>>
+struct HasTransitionTableT : std::false_type { };
 template<typename FsmT>
-struct get_entry_policy<FsmT, true> {
-    using type = typename FsmT::EntryPolicy;
-};
-
-template<typename FsmT, typename = void_t<>> struct has_transition_table : std::false_type { };
+struct HasTransitionTableT<FsmT, void_t<decltype(std::declval<FsmT>().transition_table())>>
+    : std::true_type { };
 template<typename FsmT>
-struct has_transition_table<FsmT, void_t<decltype(std::declval<FsmT>().transition_table())>>
-    : std::true_type
-{
-};
-template<typename FsmT>
-constexpr inline auto has_transition_table_v{has_transition_table<FsmT>::value};
+constexpr inline auto HasTransitionTable{HasTransitionTableT<FsmT>::value};
 
-template<typename State, bool = has_transition_table_v<State>>
-struct state_traits {
+template<typename State, bool = HasTransitionTable<State>>
+struct StateTraitsT {
     using state_type = State;
 };
 
 template<typename State>
-struct state_traits<State, true> {
-    using state_type = ufsm::Fsm<State>;
+struct StateTraitsT<State, true> {
+    using state_type = ::ufsm::Fsm<State>;
 };
 
 template<typename List, typename T, size_type N = 0>
-struct state_index { };
+struct StateIndexT { };
 
 template<template<class...>class List, typename U, typename T, typename... Ts, size_type Idx>
-struct state_index<List<T,Ts...>, U, Idx>
+struct StateIndexT<List<T,Ts...>, U, Idx>
     : std::conditional_t<std::is_same_v<T,U>,
-                         Index_constant<Idx>,
-                         state_index<List<Ts...>, U, Idx+1>>
+                         IndexConstant<Idx>,
+                         StateIndexT<List<Ts...>, U, Idx+1>>
 {
 };
 
-template<typename T, typename = void_t<>> struct has_state_list : std::false_type { };
-template<typename T>
-struct has_state_list<T, void_t<typename T::Statelist>> : std::true_type { };
-template<typename T>
-constexpr inline auto has_state_list_v{has_state_list<T>::value};
-
-template<typename T> struct get_state_list;
-// {
-//     static_assert(HasStatelist, "Fsm must define a Statelist type");
-// };
-// template<template<class,class...>class FsmT, typename T, typename... States>
-// struct get_state_list<FsmT<T, States...>> { using type = typelist<States...>; };
-template<template<typename,typename>class FsmT, typename Impl, typename Statelist>
-struct get_state_list<FsmT<Impl, Statelist>> { using type = Statelist; };
-// template<typename T>
-// struct get_state_list<T,true> { using type = typename T::Statelist; };
-template<typename T>
-using get_state_list_t = typename get_state_list<T>::type;
-
 template<typename List, typename T, size_type Idx = 0>
-constexpr inline auto state_index_v{state_index<List, T, Idx>::value};
+constexpr inline auto StateIndex{StateIndexT<List, T, Idx>::value};
 
-template<typename FsmT, typename = void_t<>> struct SelfT { };
-template<typename FsmT>
-struct SelfT<FsmT, void_t<decltype(std::declval<FsmT>().self())>> {
-    using type = decltype(std::declval<FsmT>().self());
+template<typename T, typename = void_t<>> struct HasStateListT : std::false_type { };
+template<typename T>
+struct HasStateListT<T, void_t<typename std::decay_t<T>::Statelist>> : std::true_type { };
+template<typename T>
+constexpr inline auto HasStateList{HasStateListT<T>::value};
+
+template<typename T> struct GetStateListT;
+template<template<typename,typename>class FsmT, typename Impl, typename Statelist>
+struct GetStateListT<FsmT<Impl, Statelist>> {
+    using type = Statelist;
 };
-template<typename FsmT>
-using Self = typename SelfT<FsmT>::type;
+template<typename T>
+using GetStateList = typename GetStateListT<T>::type;
 
 template<typename T, typename = void_t<>>
-struct has_next_state : std::false_type { };
+struct HasNextStateT : std::false_type { };
 template<typename T>
-struct has_next_state<T, void_t<typename std::decay_t<T>::next_state>> : std::true_type { };
+struct HasNextStateT<T, void_t<typename std::decay_t<T>::next_state>> : std::true_type { };
 template<typename T>
-constexpr inline auto has_next_state_v{has_next_state<T>::value};
+constexpr inline auto HasNextState{HasNextStateT<T>::value};
 
-template<typename T, bool = has_next_state_v<T>>
-struct Next_stateT { };
+template<typename T, bool = HasNextState<T>>
+struct NextStateT { };
 template<typename Traits>
-struct Next_stateT<Traits, true> { using type = typename std::decay_t<Traits>::next_state; };
+struct NextStateT<Traits, true> { using type = typename std::decay_t<Traits>::next_state; };
 template<typename Traits>
-using Next_state = typename Next_stateT<Traits>::type;
+using NextState = typename NextStateT<Traits>::type;
 
 } // namespace ufsm

@@ -122,7 +122,7 @@ constexpr inline auto has_log_entry_v{has_log_entry<FsmT,State>::value};
 
 
 template <class, int N, size_type... Ns>
-auto get_type_name(const char *ptr, Index_sequence<Ns...>) noexcept {
+auto get_type_name(const char *ptr, IndexSequence<Ns...>) noexcept {
   static const char str[] = {ptr[N + Ns]..., 0};
   return str;
 }
@@ -134,7 +134,7 @@ const char* get_type_name() {
 // 53 -> offset from the beginning of name deduced by __PRETTY__FUNCTION
 // -2 -> trailing ']' and '\0' in the deduced name
 return detail::get_type_name<T, 53>(
-    __PRETTY_FUNCTION__, Make_index_sequence<sizeof(__PRETTY_FUNCTION__) - 53 - 2>{});
+    __PRETTY_FUNCTION__, MakeIndexSequence<sizeof(__PRETTY_FUNCTION__) - 53 - 2>{});
 }
 
 /* log event */

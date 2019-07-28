@@ -12,7 +12,7 @@ namespace back
 namespace detail
 {
 
-template<typename State, bool = isFsm<std::decay_t<State>>>
+template<typename State, bool = IsFsm<std::decay_t<State>>>
 struct trySetInitialState {
     constexpr inline void operator()(State const&) const noexcept { /* nop */ }
 };

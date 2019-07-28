@@ -18,7 +18,7 @@ inline constexpr decltype(auto) Get(FsmT&& fsm) noexcept;
 // }
 
 template<size_type Idx, typename FsmT>
-using state_at = decltype( Get<Idx>(std::declval<FsmT>()) );
+using StateAt = decltype( Get<Idx>(std::declval<FsmT>()) );
 
 } // namespace back
 } // namespace ufsm

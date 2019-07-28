@@ -11,35 +11,49 @@ namespace back
 {
 namespace detail
 {
-template<typename State, typename FsmT, typename = void_t<>>
-struct has_exit : std::false_type { };
+// template<typename State, typename FsmT, typename = void_t<>>
+// struct HasExitT : std::false_type { };
 
-template<typename State, typename FsmT>
-struct has_exit<State, FsmT,
-    void_t<decltype(std::declval<State>().exit(std::declval<FsmT>()))>>
-    : std::true_type
-{
-};
+// template<typename State, typename FsmT>
+// struct HasExitT<State, FsmT,
+//     void_t<decltype(std::declval<State>().exit(std::declval<FsmT>()))>>
+//     : std::true_type
+// {
+// };
 
-template<typename State, typename FsmT>
-constexpr inline auto has_exit_v{has_exit<State,FsmT>::value};
+// template<typename State, typename FsmT>
+// constexpr inline auto HasExit{HasExitT<State,FsmT>::value};
 
-template<typename State, bool = isFsm<std::decay_t<State>>>
+template<typename State, typename = void_t<>, typename... Args>
+struct HasExitT : std::false_type { };
+
+template<typename State, typename... Args>
+struct HasExitT<State,
+                void_t<decltype(std::declval<State>().exit(std::declval<Args>()...))>,
+                Args...>
+: std::true_type { };
+
+template<typename State, typename... Args>
+constexpr inline auto HasExit{HasExitT<State, void, Args...>::value};
+
+template<typename State, bool = IsFsm<std::decay_t<State>>>
 struct tryExit;
 
 } // namespace detail
 
+// Intentionally do not decay the types here - HasExit should decide if FsmT has an exit()
+// member callable with the given state including the qualifiers
 template<typename FsmT_, typename State_,
-         bool HasExit = detail::has_exit_v<State_, FsmT_>>
-struct FsmExit {
+         bool = detail::HasExit<State_, FsmT_>>
+struct fsmExit {
     template<typename FsmT, typename State>
-    constexpr inline void operator()(FsmT&&, State&&) noexcept { }
+    constexpr inline void operator()(FsmT&&, State&&) const noexcept { }
 };
 
 template<typename FsmT_, typename State_>
-struct FsmExit<FsmT_, State_, true> {
+struct fsmExit<FsmT_, State_, true> {
     template<typename FsmT, typename State>
-    constexpr inline void operator()(FsmT&& fsm, State&& state) noexcept
+    constexpr inline void operator()(FsmT&& fsm, State&& state) const noexcept
     {
         detail::tryExit<std::decay_t<State>>{}(std::forward<State>(state));
         logging::fsm_log_exit(fsm, state);
@@ -50,21 +64,12 @@ struct FsmExit<FsmT_, State_, true> {
 template<typename FsmT, typename State>
 constexpr inline void fsm_exit(FsmT&& fsm, State&& state) noexcept
 {
-    using fsm_t = std::decay_t<FsmT>;
-    using state_t = std::decay_t<State>;
-    FsmExit<fsm_t, state_t>{}(std::forward<FsmT>(fsm), std::forward<State>(state));
+    // Intentionally do not decay the types here - HasExit should decide if FsmT has an exit()
+    // member callable with the given state including the qualifiers
+    // using fsm_t = std::decay_t<FsmT>;
+    // using state_t = std::decay_t<State>;
+    fsmExit<FsmT, State>{}(std::forward<FsmT>(fsm), std::forward<State>(state));
 }
-
-// template<typename FsmT, typename State>
-// constexpr inline std::enable_if_t<detail::has_exit_v<State, Self<FsmT>>>
-// fsm_exit(FsmT&& fsm, State&& state) noexcept {
-//     logging::fsm_log_exit(fsm.self(), state);
-//     std::forward<State>(state).exit(std::forward<FsmT>(fsm).self());
-// }
-
-// template<typename FsmT, typename State>
-// constexpr inline std::enable_if_t<!detail::has_exit_v<State, Self<FsmT>>>
-// fsm_exit(FsmT&&, State&&) noexcept {/* nop */}
 
 namespace detail
 {
@@ -72,12 +77,12 @@ namespace detail
 // which actually do have an exit action
 template<typename Indices> struct exitCurrentState;
 template<>
-struct exitCurrentState<Index_sequence<>> {
+struct exitCurrentState<IndexSequence<>> {
     template<typename FsmT>
     constexpr inline void operator()(FsmT&&) const noexcept {/* nop */}
 };
 template<size_type I, size_type... Is>
-struct exitCurrentState<Index_sequence<I, Is...>> {
+struct exitCurrentState<IndexSequence<I, Is...>> {
     template<typename FsmT>
     constexpr inline void operator()(FsmT&& fsm) const noexcept
     {
@@ -85,7 +90,7 @@ struct exitCurrentState<Index_sequence<I, Is...>> {
             fsm_exit(std::forward<FsmT>(fsm), Get<I>(std::forward<FsmT>(fsm)));
             return;
         }
-        exitCurrentState<Index_sequence<Is...>>{}(std::forward<FsmT>(fsm));
+        exitCurrentState<IndexSequence<Is...>>{}(std::forward<FsmT>(fsm));
     }
 };
 

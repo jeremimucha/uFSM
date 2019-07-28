@@ -20,15 +20,15 @@ inline constexpr decltype(auto) Get(FsmT&& fsm) noexcept;
 // Inheriting publicly because clang insists that declaring the `Get` template a friend makes the
 // calls ambiguous. Inheriting publicly and not declaring `Get` a friend for now as a workaound.
 template<size_type... Indices, typename... States>
-class Fsm_impl<Index_sequence<Indices...>, States...>
-    : public FsmState<Indices, typename state_traits<States>::state_type>...
+class Fsm_impl<IndexSequence<Indices...>, States...>
+    : public FsmState<Indices, typename StateTraitsT<States>::state_type>...
 {
 public:
     constexpr Fsm_impl() noexcept = default;
 
     template<typename State>
     constexpr explicit Fsm_impl(initial_state<State>) noexcept
-        : state_{state_index_v<typelist<States...>,State>}
+        : state_{StateIndex<typelist<States...>,State>}
         {
         }
 
@@ -40,7 +40,7 @@ public:
     template<typename State>
     constexpr void set_initial_state(initial_state<State>) noexcept
     {
-        state_ = state_index_v<typelist<States...>,State>;
+        state_ = StateIndex<typelist<States...>,State>;
     }
 
     constexpr inline size_type state() const noexcept { return state_; }
