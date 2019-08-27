@@ -83,7 +83,8 @@ public:
     // constexpr auto guard1 = [](Animation const&) noexcept { return true; };
     // constexpr auto action1 = [](Animation const&) noexcept { std::cerr << __PRETTY_FUNCTION__ << "\n" };
     struct guard1 {
-        constexpr bool operator()(Animation const&) const noexcept {return true;}
+        template<typename Event>
+        constexpr bool operator()(Event const&) const noexcept {return true;}
     };
     struct action1 {
         template<typename Event>
@@ -92,8 +93,10 @@ public:
         }
     };
     struct guard2 {
-        constexpr bool operator()(Animation const& fsm) const noexcept {
-            return fsm.counter >= Animation::counter_limit;
+        Animation const& fsm_;
+        template<typename Event>
+        constexpr bool operator()(Event const&) const noexcept {
+            return fsm_.counter >= Animation::counter_limit;
         }
     };
 

@@ -30,17 +30,59 @@ struct Begin {
     template<typename SM> constexpr void entry(SM const&) const noexcept { }
     template<typename SM> constexpr void exit(SM const&) const noexcept { }
 };
-template<std::size_t I> struct Operand;
+
 struct Zero {
     template<typename SM> constexpr void entry(SM const&) const noexcept { }
     template<typename SM> constexpr void exit(SM const&) const noexcept { }
 };
+
 struct Int {
-    template<typename SM> constexpr void entry(SM const&) const noexcept {
-        std::cerr << "Hello\n";
-    }
+    template<typename SM> constexpr void entry(SM const&) const noexcept { }
     template<typename SM> constexpr void exit(SM const&) const noexcept { }
 };
+
+template<std::size_t I> struct Operand;
+template<typename Base>
+struct ZeroBase : public Base {
+    static inline trace_logger<ZeroBase> logger_{};
+    static constexpr inline decltype(auto) logger() noexcept { return logger_; }
+    template<typename SM> constexpr void entry(SM const& sm) const noexcept {
+        Base::entry(sm);
+        std::cerr << "ZeroBase::entry\n";
+    }
+    template<typename SM> constexpr void exit(SM const& sm) const noexcept {
+        std::cerr << "ZeroBase::exit\n";
+        Base::exit(sm);
+    }
+};
+
+template<typename Base>
+struct IntBase : Base {
+    static inline trace_logger<IntBase> logger_{};
+    static constexpr inline decltype(auto) logger() noexcept { return logger_; }
+
+    template<typename SM> constexpr void entry(SM const& sm) const noexcept {
+        Base::entry(sm);
+        std::cerr << "IntBase::entry\n";
+    }
+    template<typename SM> constexpr void exit(SM const& sm) const noexcept {
+        std::cerr << "IntBase::exit\n";
+        Base::exit(sm);
+    }
+};
+
+struct Dupa {
+    static inline trace_logger<Dupa> logger_{};
+    static constexpr inline decltype(auto) logger() noexcept { return logger_; }
+    template<typename SM> constexpr void entry(SM const&) const noexcept {
+        std::cerr << "Dupa::entry\n";
+    }
+    template<typename SM> constexpr void exit(SM const&) const noexcept {
+        std::cerr << "Dupa::exit\n";
+    }
+};
+using Zero_ = ZeroBase<Dupa>;
+using Int_ = IntBase<Dupa>;
 struct Fraction {
     template<typename SM> constexpr void entry(SM const&) const noexcept { }
     template<typename SM> constexpr void exit(SM const&) const noexcept { }
@@ -141,10 +183,11 @@ struct On {
     {
         using namespace ufsm;
         return make_transition_table(
-            make_aentry(from_state<Ready>, event<e::Digit_0>, next_state<Operand1>, substate<Zero>),
+            make_entry(from_state<Ready>, event<e::Digit_0>, next_state<Operand1>, substate<Zero>),
             make_entry(from_state<Ready>, event<e::Digit_1_9>, next_state<Operand1>, substate<Int>),
             make_entry(from_state<Ready>, event<e::Point>, next_state<Operand1>, substate<Fraction>),
-            make_entry(from_state<Ready>, event<e::OpMinus>, next_state<Negated1>),
+            make_gentry(from_state<Ready>, event<e::Op>, next_state<Negated1>,
+                        [](e::Op et){ return et.key == '-'; }),
             make_entry(from_state<Ready>, event<e::Op>, next_state<OpEntered>),
             make_entry(from_state<Negated1>, event<e::Digit_0>, next_state<Operand1>),
             make_entry(from_state<Negated1>, event<e::Digit_1_9>, next_state<Operand1>),
@@ -192,6 +235,7 @@ int main()
 {
     ufsm::Fsm<Calculator> calculator;
     send_events(calculator,
+        e::Digit_0{},
         e::Digit_1_9{}
     );
 }

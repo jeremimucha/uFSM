@@ -13,9 +13,6 @@ features:
             Is this a good idea?
     [ ]     Support eventless transitions? This would allow for intermediate states - states that
             the control is just passing through while transitioning from one state to another.
-    [ ]     Propagate events down to nested state machines after an entry is triggered?
-            This would potentially allow for elimination of explicit `substate<S>` on transitions?
-            An alternative wold be to pass events to guards and actions. Coupling eventle
     [ ]     Implement orthogonal regions
 
 examples:
