@@ -9,18 +9,6 @@ namespace ufsm {
 namespace back {
 namespace detail {
 
-// template <typename T, typename FsmT, typename Event, typename = void_t<>>
-// struct HasActionT : std::false_type {
-// };
-
-// template <typename T, typename FsmT, typename Event>
-// struct HasActionT<T, FsmT, Event, void_t<decltype(std::declval<T>().action(std::declval<FsmT>(), std::declval<Event>()))>>
-//     : std::true_type {
-// };
-
-// template <typename T, typename FsmT, typename Event>
-// constexpr inline auto HasAction{HasActionT<T, FsmT, Event>::value};
-
 template<typename T, typename = void_t<>, typename... Args>
 struct HasActionT : std::false_type { };
 
@@ -45,7 +33,7 @@ struct fsmAction<FsmT_, Event_, TTraits_, true> {
     template <typename FsmT, typename Event, typename TTraits>
     constexpr inline void operator()(FsmT&& fsm, Event&& event, TTraits&& ttraits) const noexcept
     {
-        logging::fsm_log_action(fsm, event, ttraits.action);
+        logging::fsm_log_action(fsm, ttraits.action, event);
         std::forward<TTraits>(ttraits).action(std::forward<FsmT>(fsm), std::forward<Event>(event));
     }
 };

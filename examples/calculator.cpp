@@ -182,25 +182,25 @@ struct On {
     constexpr inline auto transition_table() noexcept
     {
         using namespace ufsm;
+        auto const guard_op_minus = [](e::Op evt) noexcept { return evt.key == '-'; };
         return make_transition_table(
             make_entry(from_state<Ready>, event<e::Digit_0>, next_state<Operand1>, substate<Zero>),
             make_entry(from_state<Ready>, event<e::Digit_1_9>, next_state<Operand1>, substate<Int>),
             make_entry(from_state<Ready>, event<e::Point>, next_state<Operand1>, substate<Fraction>),
-            make_gentry(from_state<Ready>, event<e::Op>, next_state<Negated1>,
-                        [](e::Op et){ return et.key == '-'; }),
+            make_gentry(from_state<Ready>, event<e::Op>, next_state<Negated1>, guard_op_minus),
             make_entry(from_state<Ready>, event<e::Op>, next_state<OpEntered>),
-            make_entry(from_state<Negated1>, event<e::Digit_0>, next_state<Operand1>),
-            make_entry(from_state<Negated1>, event<e::Digit_1_9>, next_state<Operand1>),
-            make_entry(from_state<Negated1>, event<e::Point>, next_state<Operand1>),
+            make_entry(from_state<Negated1>, event<e::Digit_0>, next_state<Operand1>, substate<Zero>),
+            make_entry(from_state<Negated1>, event<e::Digit_1_9>, next_state<Operand1>, substate<Int>),
+            make_entry(from_state<Negated1>, event<e::Point>, next_state<Operand1>, substate<Fraction>),
             make_entry(from_state<Operand1>, event<e::CE>, next_state<Ready>),
             make_entry(from_state<Operand1>, event<e::Op>, next_state<OpEntered>),
-            make_entry(from_state<OpEntered>, event<e::Digit_0>, next_state<Operand2>),
-            make_entry(from_state<OpEntered>, event<e::Digit_1_9>, next_state<Operand2>),
-            make_entry(from_state<OpEntered>, event<e::Point>, next_state<Operand2>),
-            make_entry(from_state<OpEntered>, event<e::OpMinus>, next_state<Operand2>),
+            make_entry(from_state<OpEntered>, event<e::Digit_0>, next_state<Operand2>, substate<Zero>),
+            make_entry(from_state<OpEntered>, event<e::Digit_1_9>, next_state<Operand2>, substate<Int>),
+            make_entry(from_state<OpEntered>, event<e::Point>, next_state<Operand2>, substate<Fraction>),
+            make_entry(from_state<OpEntered>, event<e::Op>, next_state<Operand2>),
             make_entry(from_state<Operand2>, event<e::CE>, next_state<OpEntered>),
             make_entry(from_state<Operand2>, event<e::Op>, next_state<OpEntered>),
-            make_entry(from_state<Operand2>, event<e::OpMinus>, next_state<Negated2>),
+            make_gentry(from_state<Operand2>, event<e::Op>, next_state<Negated2>, guard_op_minus),
             make_entry(from_state<Operand2>, event<e::Equals>, next_state<Ready>)
         );
     }

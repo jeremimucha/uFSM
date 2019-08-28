@@ -204,7 +204,10 @@ namespace detail
 
 template<typename FsmT, typename Action, typename Event, bool = has_log_action_v<FsmT, Action, Event>>
 struct fsm_log_action_impl {
-    constexpr inline void operator()(FsmT const&, Action const&, Event const&) const noexcept { /* nop */ }
+    constexpr inline void operator()(FsmT const&, Action const&, Event const&) const noexcept
+    {
+        /* nop */
+    }
 };
 
 template<typename FsmT, typename Action, typename Event>

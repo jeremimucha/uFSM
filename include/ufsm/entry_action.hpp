@@ -14,19 +14,6 @@ namespace back
 {
 namespace detail
 {
-// template<typename State, typename FsmT, typename = void_t<>>
-// struct HasEntryT : std::false_type { };
-
-// template<typename State, typename FsmT>
-// struct HasEntryT<State, FsmT,
-//     void_t<decltype(std::declval<State>().entry(std::declval<FsmT>()))>>
-//     : std::true_type
-// {
-// };
-
-// template<typename State, typename FsmT>
-// constexpr inline auto HasEntry{HasEntryT<State,FsmT>::value};
-
 template<typename State, typename = void_t<>, typename... Args>
 struct HasEntryT : std::false_type { };
 
