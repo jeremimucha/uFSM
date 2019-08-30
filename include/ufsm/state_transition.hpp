@@ -151,14 +151,14 @@ struct stateTransitionImpl<FsmT_, TTraits_, Event_, true> {
             auto&& next_state = Get<next_state_idx>(fsm);
             using next_state_t = std::decay_t<decltype(next_state)>;
             enterSubstate<next_state_t, ttraits_t>{}(next_state, ttraits);
-            logging::fsm_log_state_change(fsm, state, next_state);
+            logging::fsm_log_state_change(fsm, detail::asBaseState(state), next_state);
             fsmEntry<FsmT, decltype(next_state)>{}(std::forward<FsmT>(fsm), std::forward<decltype(next_state)>(next_state));
         }
     }
 };
 
 template<typename Event_, typename FsmT_, typename State_,
-         auto = detail::HasTraitsFor_v<FsmT_, State_, Event_>>
+         auto = detail::HasTraitsFor_v<FsmT_, detail::BaseFsmState<State_>, Event_>>
 struct stateTransition {
     template<typename FsmT, typename State, typename Event>
     constexpr inline void operator()(FsmT&&, State&&, Event&&) noexcept
@@ -172,7 +172,7 @@ struct stateTransition<Event_, FsmT_, State_, detail::AnyTransitionTraits> {
     template<typename FsmT, typename State, typename Event>
     constexpr inline void operator()(FsmT&& fsm, State&& state, Event&& event) noexcept
     {
-        using state_t = std::decay_t<State>;
+        using state_t = detail::BaseFsmState<std::decay_t<State>>;
         using event_t = std::decay_t<Event>;
         auto&& ttraits = Get_transition_traits<state_t, ufsm::AnyEvent_t>(fsm.transition_table());
         stateTransitionImpl<std::decay_t<FsmT>, std::decay_t<decltype(ttraits)>, event_t>{}(
@@ -188,7 +188,7 @@ struct stateTransition<Event_, FsmT_, State_, detail::ExactTransitionTraits> {
     constexpr inline void operator()(FsmT&& fsm, State&& state, Event&& event) noexcept
     {
         // std::cerr << "First we're here\n";
-        using state_t = std::decay_t<State>;
+        using state_t = detail::BaseFsmState<std::decay_t<State>>;
         using event_t = std::decay_t<Event>;
         // TODO: Is auto&& ok here? Use decltype(auto) instead?
         auto&& ttraits = Get_transition_traits<state_t, event_t>(fsm.transition_table());

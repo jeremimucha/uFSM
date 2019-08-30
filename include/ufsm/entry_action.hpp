@@ -49,7 +49,7 @@ struct fsmEntry<FsmT_, State_, true> {
     template<typename FsmT, typename State>
     constexpr inline void operator()(FsmT&& fsm, State&& state) const noexcept
     {
-        logging::fsm_log_entry(fsm, state);
+        logging::fsm_log_entry(fsm, detail::asBaseState(state));
         // TODO: How to reliably keep both std::forwards here?
         std::forward<State>(state).entry(std::forward<FsmT>(fsm));
         detail::propagateEntry<std::decay_t<State>>{}(std::forward<State>(state));

@@ -90,13 +90,15 @@ dispatch_event(FsmT&& fsm, Event&& event, IndexSequence<Idx,Idxs...>) noexcept
         // down from here - cast to the actual State type (if state is Fsm)
         auto&& state = detail::asBaseState(state_or_fsmstate);
         logging::fsm_log_event(fsm, state, event);
-        if constexpr (detail::HasHandleEvent<std::decay_t<state_t>, FsmT, Event>) {
-            state.handle_event(fsm, std::forward<Event>(event));
+        if constexpr (detail::HasHandleEvent<state_t, FsmT, Event>) {
+            state_or_fsmstate.handle_event(fsm, std::forward<Event>(event));
         }
         // stateTransition<event_t, std::decay_t<FsmT>, state_t>{}(
         //     std::forward<FsmT>(fsm), std::forward<decltype(state)>(state));
-        stateTransition<event_t, std::decay_t<FsmT>, state_t>{}(
-            std::forward<FsmT>(fsm), std::forward<decltype(state)>(state), std::forward<Event>(event));
+        stateTransition<event_t, std::decay_t<FsmT>, state_or_fsmstate_t>{}(
+            std::forward<FsmT>(fsm), std::forward<state_or_fsmstate_t>(state_or_fsmstate),
+            std::forward<Event>(event)
+            );
         // dispatch the event to the underlying state here - after state transition,
         // to give it a change to react to the state change?
         // this is probably wrong - sould tryDispatch to the nested states first
