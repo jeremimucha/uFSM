@@ -130,23 +130,26 @@ struct Operand {
     using EntryPolicy = ufsm::CurrentStateEntryPolicy;
     constexpr inline auto transition_table() noexcept {
         using namespace ufsm;
+        auto const add_zero = [](Operand& s, e::Digit_0) noexcept {
+            s.integral *= 10;
+        };
+        auto const add_digit = [](Operand& s, e::Digit_1_9 e) noexcept {
+            s.integral *= 10;
+            s.integral += e.value;
+        };
         return make_transition_table(
-            make_entry(from_state<Zero>, event<e::Digit_1_9>, next_state<Int>),
+            make_aentry(from_state<Zero>, event<e::Digit_1_9>, next_state<Int>, add_digit),
             make_entry(from_state<Zero>, event<e::Point>, next_state<Fraction>),
-            make_aentry(from_state<Int>, event<e::Digit_0>, [](Operand& state, e::Digit_0){
-                state.integral *= 10;
-            }),
-            make_aentry(from_state<Int>, event<e::Digit_1_9>, [](Operand& state, e::Digit_1_9 e){
-                state.integral *= 10;
-                state.integral += e.value;
-            }),
+            make_aentry(from_state<Int>, event<e::Digit_0>, add_zero),
+            make_aentry(from_state<Int>, event<e::Digit_1_9>, add_digit),
             make_entry(from_state<Int>, event<e::Point>, next_state<Fraction>),
-            make_aentry(from_state<Fraction>, event<e::Digit_0>, [](Operand& state, e::Digit_0){
-                state.fractional *= 10;
+            make_aentry(from_state<Fraction>, event<e::Digit_0>,
+                [](Operand& state, e::Digit_0){
+                    state.fractional *= 10;
             }),
-            make_aentry(from_state<Fraction>, event<e::Digit_0>, [](Operand& state, e::Digit_1_9 e){
-                state.fractional *= 10;
-                state.fractional += e.value;
+            make_aentry(from_state<Fraction>, event<e::Digit_1_9>,
+                [](Operand& state, e::Digit_1_9 e){
+                    state.fractional *= 10; state.fractional += e.value;
             })
         );
     }
@@ -181,7 +184,11 @@ struct On {
             make_entry(from_state<Negated1>, event<e::Point>, next_state<Operand1>, substate<Fraction>),
             make_entry(from_state<Negated1>, event<e::CE>, next_state<Ready>),
             make_entry(from_state<Operand1>, event<e::CE>, next_state<Ready>),
-            make_entry(from_state<Operand1>, event<e::Op>, next_state<OpEntered>),
+            make_aentry(from_state<Operand1>, event<e::Op>, next_state<OpEntered>,
+                [](auto const& f, auto const& e) noexcept {
+                    std::cerr << __PRETTY_FUNCTION__ << "\n";
+                    std::cerr << "Operand1 integral = " << ufsm::get_state<Operand1>(f).integral << "\n";
+                }),
             make_entry(from_state<OpEntered>, event<e::Digit_0>, next_state<Operand2>, substate<Zero>),
             make_entry(from_state<OpEntered>, event<e::Digit_1_9>, next_state<Operand2>, substate<Int>),
             make_entry(from_state<OpEntered>, event<e::Point>, next_state<Operand2>, substate<Fraction>),
@@ -228,7 +235,8 @@ int main()
     ufsm::Fsm<Calculator> calculator;
     send_events(calculator,
         e::Digit_0{},
-        e::Digit_1_9{},
+        e::Digit_1_9{42},
+        e::Op{'+'},
         e::C{}
     );
 }

@@ -46,23 +46,6 @@ using FsmState_t = typename FsmState<Idx,State>::type;
 
 /* Get */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-// template<size_type Index, typename StateT>
-//     inline constexpr FsmState_t<Index,StateT>&
-// Get_impl(FsmState<Index,StateT>& state) noexcept;
-
-// template<size_type Index, typename StateT>
-// inline constexpr FsmState_t<Index,StateT> const&
-// Get_impl(FsmState<Index,StateT> const& state) noexcept;
-
-// template<size_type Index, typename StateT>
-// inline constexpr FsmState_t<Index,StateT>&&
-// Get_impl(FsmState<Index,StateT>&& state) noexcept;
-
-// template<size_type Index, typename StateT>
-// inline constexpr FsmState_t<Index,StateT> const&&
-// Get_impl(FsmState<Index,StateT> const&& state) noexcept;
-
-
 template<size_type I, typename U>
 inline constexpr FsmState_t<I,U>& Get_impl(FsmState<I,U>& st) noexcept
 {
@@ -91,5 +74,39 @@ inline constexpr decltype(auto) Get(FsmT&& fsm) noexcept
 }
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+/* get */
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+template<typename State, size_type Idx> inline constexpr
+FsmState_t<Idx,State>& get_state_impl(FsmState<Idx,State>& state) noexcept
+{
+    return state.get();
+}
+template<typename State, size_type Idx> inline constexpr
+FsmState_t<Idx,State> const& get_state_impl(FsmState<Idx,State> const& state) noexcept
+{
+    return state.get();
+}
+template<typename State, size_type Idx> inline constexpr
+FsmState_t<Idx,State>&& get_state_impl(FsmState<Idx,State>&& state) noexcept
+{
+    return std::move(state).get();
+}
+template<typename State, size_type Idx> inline constexpr
+FsmState_t<Idx,State> const&& get_state_impl(FsmState<Idx,State> const&& state) noexcept
+{
+    return std::move(state).get();
+}
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 } // namespace back
+
+/* get */
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+template<typename State, typename FsmT>
+inline constexpr decltype(auto) get_state(FsmT&& fsm) noexcept
+{
+    return back::get_state_impl<typename StateTraitsT<State>::state_type>(std::forward<FsmT>(fsm));
+}
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 } // namespace ufsm
