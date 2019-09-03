@@ -185,9 +185,9 @@ struct On {
             make_entry(from_state<Negated1>, event<e::CE>, next_state<Ready>),
             make_entry(from_state<Operand1>, event<e::CE>, next_state<Ready>),
             make_aentry(from_state<Operand1>, event<e::Op>, next_state<OpEntered>,
-                [](auto const& f, auto const& e) noexcept {
+                [](auto const& e) noexcept {
                     std::cerr << __PRETTY_FUNCTION__ << "\n";
-                    std::cerr << "Operand1 integral = " << ufsm::get_state<Operand1>(f).integral << "\n";
+                    // std::cerr << "Operand1 integral = " << ufsm::get_state<Operand1>(f).integral << "\n";
                 }),
             make_entry(from_state<OpEntered>, event<e::Digit_0>, next_state<Operand2>, substate<Zero>),
             make_entry(from_state<OpEntered>, event<e::Digit_1_9>, next_state<Operand2>, substate<Int>),

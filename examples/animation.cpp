@@ -112,7 +112,7 @@ public:
     };
     struct action1 {
         template<typename Event>
-        void operator()(Animation const&, Event&&) const {
+        void operator()(Event&&) const {
             // std::cerr << __PRETTY_FUNCTION__ << "\n";
         }
     };

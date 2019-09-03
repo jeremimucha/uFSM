@@ -88,7 +88,7 @@ public:
     };
     struct action1 {
         template<typename Event>
-        void operator()(Animation const&, Event&&) const {
+        void operator()(Event&&) const {
             // std::cerr << __PRETTY_FUNCTION__ << "\n";
         }
     };
@@ -168,7 +168,7 @@ struct testguard2 {
 
 struct testaction {
     template<typename Event>
-    inline void operator()(Animation const&, Event const&) const {
+    inline void operator()(Event const&) const {
         std::cerr << "testaction\n";
     }
 };
