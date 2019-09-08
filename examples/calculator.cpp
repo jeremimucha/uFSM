@@ -1,10 +1,13 @@
 #include <iostream>
+#include <cmath>
 #include "fsm.hpp"
 #include "trace_logger.hpp"
 
 namespace e
 {
-struct Op { char key; };
+struct Op {
+    char key;
+};
 struct OpMinus { };
 struct CE { };
 struct C { };
@@ -87,7 +90,7 @@ using Negated2 = Negated<2>;
 // struct Operand2;
 struct OpEntered { };
 // struct Negated2;
-struct Error;
+struct Error { };
 
 struct Init { };
 
@@ -100,43 +103,75 @@ struct Ready
     template<typename SM> constexpr void exit(SM const&) const noexcept { }
 
     using InitialState = Begin;
+    using EntryPolicy = ufsm::CurrentStateEntryPolicy;
     constexpr inline auto transition_table() noexcept {
         using namespace ufsm;
         return make_transition_table(
             make_entry(from_state<Begin>, event<e::Equals>, next_state<Result>),
-            make_entry(from_state<Result>, event<AnyEvent_t>, next_state<Begin>)
+            make_entry(from_state<Result>, event<AnyEvent_t>, next_state<Begin>),
+            make_entry(from_state<Error>, event<AnyEvent_t>, next_state<Begin>)
         );
     }
 };
 
+template<typename T>
+[[nodiscard]] constexpr inline auto digit_count(T value) noexcept
+{
+    auto digits{0};
+    while(++digits && value) {
+        value /= 10;
+    }
+    return digits;
+}
+
 template<std::size_t I>
 struct Operand {
-    int integral;
-    int fractional;
+    int integral_;
+    int fractional_;
+    // bool negative_;
 
     static inline trace_logger<Operand> logger_{};
     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
 
-    template<typename SM> constexpr void entry(SM const&) const noexcept { }
-    template<typename SM> constexpr void exit(SM const&) const noexcept { }
+    // template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    // template<typename SM> constexpr void exit(SM const&) const noexcept { }
+    constexpr void entry(On&) noexcept
+    {
+        integral_ = 0;
+        fractional_ = 0;
+        // negative_ = false;
+    }
 
-    // constexpr void entry(On&) noexcept { }
-    // constexpr void exit(On const&) noexcept { }
+    constexpr void exit(On&) const noexcept { }
+
+    template<typename T>
+    static constexpr inline void increment(T& v) noexcept
+    {
+        v *= 10;
+    }
+
+    constexpr inline auto get_value() const noexcept
+    {
+        const auto ord_magn = std::pow(10, digit_count(fractional_) - 1);
+        return integral_ + static_cast<double>(fractional_) / ord_magn;
+    }
 
     using InitialState = Zero;
     // States which we'd like to explicitly enter substates for
     // need to set the CurrentStateEntryPolicy - otherwise the state will be reset
     // to the initial state on entry
     using EntryPolicy = ufsm::CurrentStateEntryPolicy;
+
     constexpr inline auto transition_table() noexcept {
         using namespace ufsm;
         auto const add_zero = [](Operand& s, e::Digit_0) noexcept {
-            s.integral *= 10;
+            increment(s.integral_);
         };
         auto const add_digit = [](Operand& s, e::Digit_1_9 e) noexcept {
-            s.integral *= 10;
-            s.integral += e.value;
+            increment(s.integral_);
+            s.integral_ += e.value;
         };
+
         return make_transition_table(
             make_aentry(from_state<Zero>, event<e::Digit_1_9>, next_state<Int>, add_digit),
             make_entry(from_state<Zero>, event<e::Point>, next_state<Fraction>),
@@ -144,12 +179,13 @@ struct Operand {
             make_aentry(from_state<Int>, event<e::Digit_1_9>, add_digit),
             make_entry(from_state<Int>, event<e::Point>, next_state<Fraction>),
             make_aentry(from_state<Fraction>, event<e::Digit_0>,
-                [](Operand& state, e::Digit_0){
-                    state.fractional *= 10;
+                [](Operand& s, e::Digit_0){
+                    increment(s.fractional_);
             }),
             make_aentry(from_state<Fraction>, event<e::Digit_1_9>,
-                [](Operand& state, e::Digit_1_9 e){
-                    state.fractional *= 10; state.fractional += e.value;
+                [](Operand& s, e::Digit_1_9 e){
+                    increment(s.fractional_);
+                    s.fractional_ += e.value;
             })
         );
     }
@@ -158,49 +194,95 @@ using Operand1 = Operand<1>;
 using Operand2 = Operand<2>;
 
 struct On {
-    double lhs_operand;
-    double rhs_operand;
-    char op;
+    double total_;
+    char op_;
 
     static inline trace_logger<On> logger_{};
     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
 
-    template<typename SM> constexpr void entry(SM const&) const noexcept { }
+    template<typename SM> constexpr void entry(SM const&) noexcept
+    {
+        total_ = 0.0;
+        op_ = '!';  // None
+    }
     template<typename SM> constexpr void exit(SM const&) const noexcept { }
+
+    template<typename T>
+    void update(T rhs) noexcept
+    {
+        switch (op_) {
+        case '+':
+            total_ += rhs;
+            break;
+        case '-':
+            total_ -= rhs;
+            break;
+        case '*':
+            total_ *= rhs;
+            break;
+        case '/':
+            total_ /= rhs;
+            break;
+        default:
+            throw std::runtime_error{"Unknown operator"};
+        }
+    }
 
     using InitialState = Ready;
     constexpr inline auto transition_table() noexcept
     {
         using namespace ufsm;
-        auto const guard_op_minus = [](e::Op evt) noexcept { return evt.key == '-'; };
+        auto const guard_op_minus{ [](e::Op evt) noexcept { return evt.key == '-'; } };
+        auto const action_set_negative{ [](auto& fsm, e::Op) noexcept { fsm.negative = true; } };
+        auto const action_set_op{ [](auto& fsm, e::Op op) noexcept {fsm.op_ = op.key;} };
+
         return make_transition_table(
             make_entry(from_state<Ready>, event<e::Digit_0>, next_state<Operand1>, substate<Zero>),
             make_entry(from_state<Ready>, event<e::Digit_1_9>, next_state<Operand1>, substate<Int>),
             make_entry(from_state<Ready>, event<e::Point>, next_state<Operand1>, substate<Fraction>),
-            make_gentry(from_state<Ready>, event<e::Op>, next_state<Negated1>, guard_op_minus),
-            make_entry(from_state<Ready>, event<e::Op>, next_state<OpEntered>),
-            make_entry(from_state<Negated1>, event<e::Digit_0>, next_state<Operand1>, substate<Zero>),
-            make_entry(from_state<Negated1>, event<e::Digit_1_9>, next_state<Operand1>, substate<Int>),
-            make_entry(from_state<Negated1>, event<e::Point>, next_state<Operand1>, substate<Fraction>),
-            make_entry(from_state<Negated1>, event<e::CE>, next_state<Ready>),
+            // make_entry(from_state<Ready>, event<e::Op>, next_state<Negated1>, guard_op_minus,
+            //     action_set_negative),
+            make_entry(from_state<Ready>, event<e::Op>, next_state<OpEntered>, action_set_op),
             make_entry(from_state<Operand1>, event<e::CE>, next_state<Ready>),
             make_aentry(from_state<Operand1>, event<e::Op>, next_state<OpEntered>,
-                [](auto const& e) noexcept {
-                    std::cerr << __PRETTY_FUNCTION__ << "\n";
-                    // std::cerr << "Operand1 integral = " << ufsm::get_state<Operand1>(f).integral << "\n";
+                [](auto& fsm, e::Op op) noexcept {
+                    // update total
+                    fsm.total_ = ufsm::get_state<Operand1>(fsm).get_value();
+                    fsm.op_ = op.key;
                 }),
             make_entry(from_state<OpEntered>, event<e::Digit_0>, next_state<Operand2>, substate<Zero>),
             make_entry(from_state<OpEntered>, event<e::Digit_1_9>, next_state<Operand2>, substate<Int>),
             make_entry(from_state<OpEntered>, event<e::Point>, next_state<Operand2>, substate<Fraction>),
-            make_gentry(from_state<OpEntered>, event<e::Op>, next_state<Negated2>, guard_op_minus),
-            make_entry(from_state<OpEntered>, event<e::Op>, next_state<Operand2>),
-            make_entry(from_state<Negated2>, event<e::Digit_0>, next_state<Operand2>, substate<Zero>),
-            make_entry(from_state<Negated2>, event<e::Digit_1_9>, next_state<Operand2>, substate<Int>),
-            make_entry(from_state<Negated2>, event<e::Point>, next_state<Operand2>, substate<Fraction>),
-            make_entry(from_state<Negated2>, event<e::CE>, next_state<OpEntered>),
-            make_entry(from_state<Operand2>, event<e::CE>, next_state<OpEntered>),
-            make_entry(from_state<Operand2>, event<e::Op>, next_state<OpEntered>),
-            make_entry(from_state<Operand2>, event<e::Equals>, next_state<Ready>, substate<Result>)
+            make_aentry(from_state<OpEntered>, event<e::Op>, next_state<OpEntered>, action_set_op),
+            make_entry(from_state<Operand2>, event<e::CE>, next_state<Operand2> /* Operand2 cleared on entry */),
+            make_aentry(from_state<Operand2>, event<e::Op>, next_state<OpEntered>,
+                [](auto& fsm, e::Op op) noexcept {
+                    // calculate and display the current total
+                    auto const rhs{ufsm::get_state<Operand2>(fsm).get_value()};
+                    fsm.update(rhs);
+                    fsm.op_ = op.key;
+            }),
+            make_entry(from_state<Operand2>, event<e::Equals>, next_state<Ready>, substate<Error>,
+                [](auto const& fsm, e::Equals) noexcept {
+                    std::cerr << "### Checking error condition ###\n";
+                    return fsm.op_ == '/' && ufsm::get_state<Operand2>(fsm).get_value() == 0;
+                },
+                [](auto& fsm, e::Equals) noexcept {
+                    std::cerr << "### Taking error branch ###\n";
+                    fsm.total_ = 0.0;
+                    fsm.op_ = '!';
+                }),
+            make_aentry(from_state<Operand2>, event<e::Equals>, next_state<Ready>, substate<Result>,
+                [](auto& fsm, e::Equals) noexcept {
+                    // calculate the current total
+                    auto const lhs{ufsm::get_state<Operand1>(fsm).get_value()};
+                    auto const rhs{ufsm::get_state<Operand2>(fsm).get_value()};
+                    fsm.update(rhs);
+                    std::cout << "Operand1 = " << lhs << "\n";
+                    std::cout << "Operand2 = " << rhs << "\n";
+                    std::cout << "total = " << fsm.total_ << "\n";
+                }
+            )
         );
     }
 };
@@ -237,6 +319,13 @@ int main()
         e::Digit_0{},
         e::Digit_1_9{42},
         e::Op{'+'},
+        e::Point{},
+        e::Digit_1_9{3},
+        e::Digit_1_9{1},
+        e::Digit_1_9{4},
+        e::Equals{},
+        e::Op{'+'},
+        e::Op{},
         e::C{}
     );
 }

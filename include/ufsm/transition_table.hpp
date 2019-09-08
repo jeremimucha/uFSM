@@ -1,6 +1,7 @@
 #pragma once
 
 #include <type_traits>
+#include <tuple>
 // #include "fsmfwd.hpp"
 #include "traits.hpp"
 
@@ -155,20 +156,67 @@ Get_transition_traits(TransitionEntry<State,Event,NextState,Guard,Action,Substat
     return te;
 }
 
-// template<typename State, typename Event, typename... Entries>
-// inline constexpr decltype(auto)
-// Get_transition_traits(TransitionTraits<Entries...> const& tt) noexcept
-// {
-//     return Get_transition_traits_impl<State,Event>(tt);
-// }
+template<typename State, typename Event, typename Entry>
+struct IsMatchingEntryT : std::false_type { };
+template<typename State, typename Event, template<typename...> class Entry, typename... Ts>
+struct IsMatchingEntryT<State, Event, Entry<State, Event, Ts...>> : std::true_type { };
 
-// template<typename State, typename Event, typename FsmT>
-// inline constexpr decltype(auto)
-// Get_fsm_ttraits(FsmT&& fsm) noexcept
-// {
-//     return Get_transition_traits<State,Event>(fsm.derived().transition_table);
-// }
+template<typename State, typename Event, typename Entry>
+constexpr inline auto IsMatchingEntry{IsMatchingEntryT<State, Event, Entry>::value};
 
+template<typename List, typename State, typename Event, typename... Entries>
+struct GetTtraitsListImplT;
+
+template<template<typename...> class List, typename State, typename Event, typename... Es>
+struct GetTtraitsListImplT<List<Es...>, State, Event> {
+    using type = List<Es...>;
+};
+
+template<template<typename...>class List, typename State, typename Event,
+         typename Entry, typename... Entries, typename... Es>
+struct GetTtraitsListImplT<List<Es...>, State, Event, Entry, Entries...>
+    : std::conditional_t<IsMatchingEntry<State, Event, Entry>,
+                         GetTtraitsListImplT<List<Es..., Entry>, State, Event, Entries...>,
+                         GetTtraitsListImplT<List<Es...>, State, Event, Entries...>
+                         >
+{
+};
+
+template<typename State, typename Event, typename... Entries>
+struct GetTtraitsListT : GetTtraitsListImplT<typelist<>, State, Event, Entries...> { };
+
+template<typename State, typename Event, typename... Entries>
+using GetTtraitsList = typename GetTtraitsListT<State, Event, Entries...>::type;
+
+template<typename Entry> struct asTransitionEntry;
+
+template<template<typename...> class Entry, typename State, typename Event, typename NextState,
+         typename Guard, typename Action, typename Substate>
+struct asTransitionEntry<Entry<State, Event, NextState, Guard, Action, Substate>>{
+    constexpr inline decltype(auto) operator()(
+        TransitionEntry<State, Event, NextState, Guard, Action, Substate> const& te) const noexcept
+    {
+        return te;
+    }
+};
+
+template<typename TtraitsList> struct getTransitionTraitsImpl;
+template<template<typename...> class List, typename... Entries>
+struct getTransitionTraitsImpl<List<Entries...>> {
+    template<typename TTraits>
+    inline constexpr auto operator()(TTraits const& ttraits) const noexcept
+    {
+        // std::cerr << __PRETTY_FUNCTION__ << "\n";
+        return std::make_tuple(asTransitionEntry<Entries>{}(ttraits)...);
+    }
+};
+
+template<typename State, typename Event, typename... Entries>
+inline constexpr auto getTransitionTraits(TransitionTraits<Entries...>&& ttraits) noexcept
+{
+    using TtraitsList = GetTtraitsList<State, Event, Entries...>;
+    return getTransitionTraitsImpl<TtraitsList>{}(ttraits);
+}
 
 template<typename... Entries>
 constexpr auto make_transition_table(Entries&&... entries) noexcept

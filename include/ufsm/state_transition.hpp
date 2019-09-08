@@ -71,29 +71,51 @@ constexpr inline auto NoTransitionTraits{NoTransitionTraitsTag::value};
 constexpr inline auto AnyTransitionTraits{AnyTransitionTraitsTag::value};
 constexpr inline auto ExactTransitionTraits{ExactTransitionTraitsTag::value};
 
-template<typename FsmT, typename State, typename = void_t<>>
+template<typename FsmT, typename State,
+    typename = decltype(getTransitionTraits<std::decay_t<State>, ufsm::AnyEvent_t>(
+        std::declval<FsmT>().transition_table()))>
 struct HasTraitsForAnyEvent : NoTransitionTraitsTag { };
 
-template<typename FsmT, typename State>
-struct HasTraitsForAnyEvent<FsmT, State,
-    void_t<decltype(
-        Get_transition_traits<std::decay_t<State>, ufsm::AnyEvent_t>(
-            std::declval<FsmT>().transition_table()))>>
+template<typename FsmT, typename State, typename T, typename... Ts>
+struct HasTraitsForAnyEvent<FsmT, State, std::tuple<T, Ts...>>
     : AnyTransitionTraitsTag
 {
 };
 
-template<typename FsmT, typename State, typename Event, typename = void_t<>>
+template<typename FsmT, typename State, typename Event,
+    typename = decltype(getTransitionTraits<std::decay_t<State>, std::decay_t<Event>>(
+        std::declval<FsmT>().transition_table()))>
 struct HasTraitsFor : HasTraitsForAnyEvent<FsmT, State> { };
 
-template<typename FsmT,typename State, typename Event>
-struct HasTraitsFor<FsmT, State, Event,
-    void_t<decltype(
-        Get_transition_traits<std::decay_t<State>,std::decay_t<Event>>(
-            std::declval<FsmT>().transition_table()))>>
+template<typename FsmT, typename State, typename Event, typename T, typename... Ts>
+struct HasTraitsFor<FsmT, State, Event, std::tuple<T, Ts...>>
     : ExactTransitionTraitsTag
 {
 };
+
+// template<typename FsmT, typename State, typename = void_t<>>
+// struct HasTraitsForAnyEvent : NoTransitionTraitsTag { };
+
+// template<typename FsmT, typename State>
+// struct HasTraitsForAnyEvent<FsmT, State,
+//     void_t<decltype(
+//         Get_transition_traits<std::decay_t<State>, ufsm::AnyEvent_t>(
+//             std::declval<FsmT>().transition_table()))>>
+//     : AnyTransitionTraitsTag
+// {
+// };
+
+// template<typename FsmT, typename State, typename Event, typename = void_t<>>
+// struct HasTraitsFor : HasTraitsForAnyEvent<FsmT, State> { };
+
+// template<typename FsmT,typename State, typename Event>
+// struct HasTraitsFor<FsmT, State, Event,
+//     void_t<decltype(
+//         Get_transition_traits<std::decay_t<State>,std::decay_t<Event>>(
+//             std::declval<FsmT>().transition_table()))>>
+//     : ExactTransitionTraitsTag
+// {
+// };
 template<typename FsmT, typename State, typename Event>
 constexpr inline auto HasTraitsFor_v = HasTraitsFor<FsmT,State,Event>::value;
 
@@ -192,12 +214,14 @@ template<typename FsmT_, typename TTraits_, typename Event_,
          bool = HasNextState<TTraits_>>
 struct stateTransitionImpl {
     template<typename FsmT, typename TTraits, typename State, typename Event>
-    constexpr inline void operator()(FsmT&& fsm, TTraits&& traits, State&&, Event&& event) noexcept
+    constexpr inline bool operator()(FsmT&& fsm, TTraits&& traits, State&&, Event&& event) const noexcept
     {
         if (fsmGuard<FsmT, TTraits, Event>{}(fsm, traits, event)) {
             fsmAction<FsmT, Event, TTraits>{}(
                 std::forward<FsmT>(fsm), std::forward<Event>(event), std::forward<TTraits>(traits));
+            return true;
         }
+        return false;
     }
 };
 
@@ -205,7 +229,7 @@ struct stateTransitionImpl {
 template<typename FsmT_, typename TTraits_, typename Event_>
 struct stateTransitionImpl<FsmT_, TTraits_, Event_, true> {
     template<typename FsmT, typename TTraits, typename State, typename Event>
-    constexpr inline void operator()(FsmT&& fsm, TTraits&& ttraits, State&& state, Event&& event) noexcept
+    constexpr inline bool operator()(FsmT&& fsm, TTraits&& ttraits, State&& state, Event&& event) const noexcept
     {
         if (fsmGuard<FsmT, TTraits, Event>{}(fsm, ttraits, event)) {
             fsmExit<FsmT, State>{}(fsm, state);
@@ -219,6 +243,45 @@ struct stateTransitionImpl<FsmT_, TTraits_, Event_, true> {
             enterSubstate<next_state_t, ttraits_t>{}(next_state, ttraits);
             logging::fsm_log_state_change(fsm, detail::asBaseState(state), next_state);
             fsmEntry<FsmT, decltype(next_state)>{}(std::forward<FsmT>(fsm), std::forward<decltype(next_state)>(next_state));
+            return true;
+        }
+        return false;
+    }
+};
+
+template<typename Indices> struct applyStateTransition;
+
+template<>
+struct applyStateTransition<IndexSequence<>> {
+    template<typename TraitsTuple, typename FsmT, typename State, typename Event>
+    constexpr inline void
+    operator()(TraitsTuple&&, FsmT&&, State&&, Event&&) const noexcept
+    {
+        /* nop */
+    }
+};
+
+template<size_type I, size_type... Is>
+struct applyStateTransition<IndexSequence<I, Is...>> {
+    template<typename TraitsTuple, typename FsmT, typename State, typename Event>
+    constexpr inline void
+    operator()(TraitsTuple&& traits, FsmT&& fsm, State&& state, Event&& event) const noexcept
+    {
+        using fsm_t = std::decay_t<FsmT>;
+        using traits_t = std::decay_t<std::tuple_element_t<I, std::decay_t<TraitsTuple>>>;
+        using event_t = std::decay_t<Event>;
+        if (!stateTransitionImpl<fsm_t, traits_t, event_t>{}(
+                std::forward<FsmT>(fsm),
+                std::get<I>(std::forward<TraitsTuple>(traits)),
+                std::forward<State>(state),
+                std::forward<Event>(event)))
+        {
+            applyStateTransition<IndexSequence<Is...>>{}(
+                std::forward<TraitsTuple>(traits),
+                std::forward<FsmT>(fsm),
+                std::forward<State>(state),
+                std::forward<Event>(event)
+            );
         }
     }
 };
@@ -240,11 +303,19 @@ struct stateTransition<Event_, FsmT_, State_, detail::AnyTransitionTraits> {
     {
         using state_t = detail::BaseFsmState<std::decay_t<State>>;
         using event_t = std::decay_t<Event>;
-        auto&& ttraits = Get_transition_traits<state_t, ufsm::AnyEvent_t>(fsm.transition_table());
-        stateTransitionImpl<std::decay_t<FsmT>, std::decay_t<decltype(ttraits)>, event_t>{}(
-            std::forward<FsmT>(fsm), std::forward<decltype(ttraits)>(ttraits),
-            std::forward<State>(state), std::forward<Event>(event)
-        );
+        // auto&& ttraits = Get_transition_traits<state_t, ufsm::AnyEvent_t>(fsm.transition_table());
+        auto&& ttraitstuple = getTransitionTraits<state_t, ufsm::AnyEvent_t>(fsm.transition_table());
+        // auto&& ttraits = std::get<0>(ttraitstuple);
+        // stateTransitionImpl<std::decay_t<FsmT>, std::decay_t<decltype(ttraits)>, event_t>{}(
+        //     std::forward<FsmT>(fsm), std::forward<decltype(ttraits)>(ttraits),
+        //     std::forward<State>(state), std::forward<Event>(event)
+        // );
+        using Indices = MakeIndexSequence<std::tuple_size_v<std::decay_t<decltype(ttraitstuple)>>>;
+        applyStateTransition<Indices>{}(
+            std::forward<decltype(ttraitstuple)>(ttraitstuple),
+            std::forward<FsmT>(fsm),
+            std::forward<State>(state),
+            std::forward<Event>(event));
     }
 };
 
@@ -253,15 +324,22 @@ struct stateTransition<Event_, FsmT_, State_, detail::ExactTransitionTraits> {
     template<typename FsmT, typename State, typename Event>
     constexpr inline void operator()(FsmT&& fsm, State&& state, Event&& event) noexcept
     {
-        // std::cerr << "First we're here\n";
         using state_t = detail::BaseFsmState<std::decay_t<State>>;
         using event_t = std::decay_t<Event>;
         // TODO: Is auto&& ok here? Use decltype(auto) instead?
-        auto&& ttraits = Get_transition_traits<state_t, event_t>(fsm.transition_table());
-        stateTransitionImpl<std::decay_t<FsmT>, std::decay_t<decltype(ttraits)>, event_t>{}(
-            std::forward<FsmT>(fsm), std::forward<decltype(ttraits)>(ttraits),
-            std::forward<State>(state), std::forward<Event>(event)
-        );
+        // auto&& ttraits = Get_transition_traits<state_t, event_t>(fsm.transition_table());
+        auto&& ttraitstuple = getTransitionTraits<state_t, event_t>(fsm.transition_table());
+        // auto&& ttraits = std::get<0>(ttraitstuple);
+        // stateTransitionImpl<std::decay_t<FsmT>, std::decay_t<decltype(ttraits)>, event_t>{}(
+        //     std::forward<FsmT>(fsm), std::forward<decltype(ttraits)>(ttraits),
+        //     std::forward<State>(state), std::forward<Event>(event)
+        // );
+        using Indices = MakeIndexSequence<std::tuple_size_v<std::decay_t<decltype(ttraitstuple)>>>;
+        applyStateTransition<Indices>{}(
+            std::forward<decltype(ttraitstuple)>(ttraitstuple),
+            std::forward<FsmT>(fsm),
+            std::forward<State>(state),
+            std::forward<Event>(event));
     }
 };
 
