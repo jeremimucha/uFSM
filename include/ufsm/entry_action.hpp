@@ -41,7 +41,10 @@ template<typename FsmT_, typename State_,
          bool = detail::HasEntry<State_, FsmT_>>
 struct fsmEntry {
     template<typename FsmT, typename State>
-    constexpr inline void operator()(FsmT&&, State&&) const noexcept { }
+    constexpr inline void operator()(FsmT&&, State&& state) const noexcept
+    {
+        detail::propagateEntry<std::decay_t<State>>{}(std::forward<State>(state));
+    }
 };
 
 template<typename FsmT_, typename State_>
