@@ -132,7 +132,7 @@ public:
     //     TransitionEntry<sPaused,eStop,sIdle,void,void>
     // > transition_table{};
 
-    /* static */ constexpr inline auto transition_table() noexcept
+    /* static */ constexpr inline auto transition_table() const noexcept
     {
         using namespace ufsm;
         return make_transition_table(

@@ -100,7 +100,7 @@ public:
         }
     };
 
-    /* static */ constexpr inline auto transition_table() noexcept
+    /* static */ constexpr inline auto transition_table() const noexcept
     {
         using namespace ufsm;
         return make_transition_table(
