@@ -4,6 +4,7 @@
 #include <utility>
 #include "traits.hpp"
 #include "state_transition.hpp"
+#include "try_dispatch.hpp"
 #include "logging.hpp"
 #include "fsmfwd.hpp"
 
@@ -28,21 +29,6 @@ template<typename State, typename... Args>
 struct HasHandleEventT : HasHandleEventTImpl<State, void, Args...> { };
 template<typename State, typename... Args>
 constexpr inline auto HasHandleEvent{HasHandleEventT<State,Args...>::value};
-
-template<typename State, bool = IsFsm<std::decay_t<State>>>
-struct tryDispatch {
-    template<typename Event>
-    constexpr inline void operator()(State const&, Event) const noexcept { /* nop */ }
-};
-
-template<typename State>
-struct tryDispatch<State, true> {
-    template<typename FsmT, typename Event>
-    constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept
-    {
-        std::forward<FsmT>(fsm).dispatch_event(std::forward<Event>(event));
-    }
-};
 
 } // namespace detail
 

@@ -246,7 +246,8 @@ struct stateTransitionImpl<FsmT_, TTraits_, Event_, true> {
             logging::fsm_log_state_change(fsm, detail::asBaseState(state), next_state);
             fsmEntry<FsmT, decltype(next_state)>{}(
                 std::forward<FsmT>(fsm),
-                std::forward<decltype(next_state)>(next_state)
+                std::forward<decltype(next_state)>(next_state),
+                std::forward<Event>(event)
             );
             return true;
         }

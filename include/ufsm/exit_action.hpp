@@ -50,7 +50,7 @@ struct fsmExit<FsmT_, State_, true> {
     {
         // std::cerr << __PRETTY_FUNCTION__ << "\n";
         detail::tryExit<State>{}(std::forward<State>(state));
-        logging::fsm_log_exit(fsm, state);
+        logging::fsm_log_exit(fsm, detail::asBaseState(state));
         std::forward<State>(state).exit(std::forward<FsmT>(fsm));
     }
 };
