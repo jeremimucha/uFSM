@@ -17,13 +17,22 @@ template<typename State, typename = void_t<>, typename... Args>
 struct HasExitT : std::false_type { };
 
 template<typename State, typename... Args>
+using state_exit_call = decltype(std::declval<State>().exit(std::declval<Args>()...));
+
+template<typename State, typename... Args>
 struct HasExitT<State,
-                void_t<decltype(std::declval<State>().exit(std::declval<Args>()...))>,
+                void_t<state_exit_call<State, Args...>>,
                 Args...>
 : std::true_type { };
 
 template<typename State, typename... Args>
 constexpr inline auto HasExit{HasExitT<State, void, Args...>::value};
+
+struct NoExitAction { };
+struct ExitActionFsm { };
+struct ExitActionFsmEvent { };
+
+// TODO: Implement exit action for different overloads
 
 template<typename State, bool = IsFsm<std::decay_t<State>>>
 struct tryExit;
@@ -38,7 +47,6 @@ struct fsmExit {
     template<typename FsmT, typename State>
     constexpr inline void operator()(FsmT&&, State&& state) const noexcept
     {
-        // std::cerr << __PRETTY_FUNCTION__ << "\n";
         detail::tryExit<State>{}(std::forward<State>(state));
     }
 };
@@ -48,7 +56,6 @@ struct fsmExit<FsmT_, State_, true> {
     template<typename FsmT, typename State>
     constexpr inline void operator()(FsmT&& fsm, State&& state) const noexcept
     {
-        // std::cerr << __PRETTY_FUNCTION__ << "\n";
         detail::tryExit<State>{}(std::forward<State>(state));
         logging::fsm_log_exit(fsm, detail::asBaseState(state));
         std::forward<State>(state).exit(std::forward<FsmT>(fsm));
@@ -60,8 +67,6 @@ constexpr inline void fsm_exit(FsmT&& fsm, State&& state) noexcept
 {
     // Intentionally do not decay the types here - HasExit should decide if FsmT has an exit()
     // member callable with the given state including the qualifiers
-    // using fsm_t = std::decay_t<FsmT>;
-    // using state_t = std::decay_t<State>;
     fsmExit<FsmT, State>{}(std::forward<FsmT>(fsm), std::forward<State>(state));
 }
 
@@ -81,9 +86,10 @@ struct exitCurrentState<IndexSequence<I, Is...>> {
     constexpr inline void operator()(FsmT&& fsm) const noexcept
     {
         if (I == fsm.state()) {
-            // using state_type = decltype(Get<I>(std::forward<FsmT>(fsm)));
-            // fsmExit<FsmT, state_type>{}(std::forward<FsmT>(fsm), Get<I>(std::forward<FsmT>(fsm)));
-            fsm_exit(std::forward<FsmT>(fsm), Get<I>(std::forward<FsmT>(fsm)));
+            fsmExit<FsmT, StateAt<I, FsmT>>{}(
+                std::forward<FsmT>(fsm),
+                Get<I>(std::forward<FsmT>(fsm))
+            );
             return;
         }
         exitCurrentState<IndexSequence<Is...>>{}(std::forward<FsmT>(fsm));
@@ -92,10 +98,10 @@ struct exitCurrentState<IndexSequence<I, Is...>> {
 
 template<typename State, bool>
 struct tryExit {
-    constexpr inline void operator()(State const&) const noexcept {
+    constexpr inline void operator()(State const&) const noexcept
+    {
         /* nop */
-        // std::cerr << __PRETTY_FUNCTION__ << "\n";
-        }
+    }
 };
 
 template<typename State>
@@ -103,7 +109,6 @@ struct tryExit<State, true> {
     template<typename FsmT>
     constexpr inline void operator()(FsmT&& fsm) const noexcept
     {
-        // std::cerr << __PRETTY_FUNCTION__ << "\n";
         exitCurrentState<typename std::decay_t<FsmT>::Indices>{}(std::forward<FsmT>(fsm));
     }
 };

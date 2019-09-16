@@ -53,7 +53,7 @@ constexpr inline void
 dispatch_event(FsmT&& fsm, Event&& event, IndexSequence<Idx,Idxs...>) noexcept
 {
     if (Idx == fsm.state()) {
-        // This may be ufsm::Fsm<State>, rather than the State itself
+        // This may be ufsm::Fsm<State, ...>, rather than the State itself
         // decay into the underlying type for now
         // to correctly handle hierarhical fsm's we'll need to provide overrides for
         // states which are Fsm's themselves
@@ -67,28 +67,23 @@ dispatch_event(FsmT&& fsm, Event&& event, IndexSequence<Idx,Idxs...>) noexcept
         // event, don't dispatch if it can't - general optimization of dispatch_event,
         // To handle the event in the parent (current) state we'll need to cast the nested Fsm
         // to the type that's actually in the Statelist of the current Fsm
-        using state_or_fsmstate_t = StateAt<Idx, FsmT>;
-        using state_t = detail::BaseFsmState<state_or_fsmstate_t>;
+        using state_fsm_t = StateAt<Idx, FsmT>;
+        using state_t = detail::BaseFsmState<state_fsm_t>;
         using event_t = std::decay_t<Event>;
-        // auto&& state = Get<Idx>(fsm);
-        decltype(auto) state_or_fsmstate = Get<Idx>(fsm);
-        detail::tryDispatch<state_or_fsmstate_t>{}(state_or_fsmstate, event);
+        decltype(auto) state_fsm = Get<Idx>(fsm);
+        detail::tryDispatch<state_fsm_t>{}(state_fsm, event);
         // down from here - cast to the actual State type (if state is Fsm)
-        auto&& state = detail::asBaseState(state_or_fsmstate);
-        logging::fsm_log_event(fsm, state, event);
+        // auto&& state = detail::asBaseState(state_fsm);
+        using detail::asBaseState;
+        logging::fsm_log_event(fsm, asBaseState(state_fsm), event);
         if constexpr (detail::HasHandleEvent<state_t, FsmT, Event>) {
-            state_or_fsmstate.handle_event(fsm, std::forward<Event>(event));
+            state_fsm.handle_event(fsm, std::forward<Event>(event));
         }
-        // stateTransition<event_t, std::decay_t<FsmT>, state_t>{}(
-        //     std::forward<FsmT>(fsm), std::forward<decltype(state)>(state));
-        stateTransition<event_t, std::decay_t<FsmT>, state_or_fsmstate_t>{}(
-            std::forward<FsmT>(fsm), std::forward<state_or_fsmstate_t>(state_or_fsmstate),
+        stateTransition<event_t, std::decay_t<FsmT>, state_fsm_t>{}(
+            std::forward<FsmT>(fsm),
+            std::forward<state_fsm_t>(state_fsm),
             std::forward<Event>(event)
             );
-        // dispatch the event to the underlying state here - after state transition,
-        // to give it a change to react to the state change?
-        // this is probably wrong - sould tryDispatch to the nested states first
-        // detail::tryDispatch<state_or_fsmstate_t>{}(state_or_fsmstate, event);
     }
     else if constexpr (sizeof...(Idxs) != 0) {
         dispatch_event(
