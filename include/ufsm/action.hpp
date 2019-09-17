@@ -14,7 +14,10 @@ template<typename T, typename = void_t<>, typename... Args>
 struct HasActionT : std::false_type { };
 
 template<typename T, typename... Args>
-struct HasActionT<T, void_t<decltype(std::declval<T>().action(std::declval<Args>()...))>, Args...>
+using transition_action_call = decltype(std::declval<T>().action(std::declval<Args>()...));
+
+template<typename T, typename... Args>
+struct HasActionT<T, void_t<transition_action_call<T, Args...>>, Args...>
     : std::true_type { };
 
 template<typename T, typename... Args>
@@ -24,22 +27,22 @@ struct NoTransitionAction { };
 struct TransitionActionEvent { };
 struct TransitionActionFsmEvent { };
 
-template<typename TTraits, typename FsmT, typename Event, typename = void_t<>>
+template<typename TTraits, typename Event, typename = void_t<>>
 struct SelectTransitionActionEventT { using type = NoTransitionAction; };
 
-template<typename TTraits, typename FsmT, typename Event>
-struct SelectTransitionActionEventT<TTraits, FsmT, Event,
-    void_t<decltype(std::declval<TTraits>().action(std::declval<Event>()))>>
+template<typename TTraits, typename Event>
+struct SelectTransitionActionEventT<TTraits, Event,
+    void_t<transition_action_call<TTraits, Event>>>
 {
     using type = TransitionActionEvent;
 };
 
 template<typename TTraits, typename FsmT, typename Event, typename = void_t<>>
-struct SelectTransitionActionFsmEventT : SelectTransitionActionEventT<TTraits, FsmT, Event> { };
+struct SelectTransitionActionFsmEventT : SelectTransitionActionEventT<TTraits, Event> { };
 
 template<typename TTraits, typename FsmT, typename Event>
 struct SelectTransitionActionFsmEventT<TTraits, FsmT, Event,
-    void_t<decltype(std::declval<TTraits>().action(std::declval<FsmT>(), std::declval<Event>()))>>
+    void_t<transition_action_call<TTraits, FsmT, Event>>>
 {
     using type = TransitionActionFsmEvent;
 };
@@ -173,14 +176,16 @@ template<size_type I, size_type... Is> struct executeAction<IndexSequence<I, Is.
                 std::forward<Event>(event),
                 std::forward<decltype(traits)>(traits)
             );
-            return;
+            // return;
         }
-        executeAction<IndexSequence<Is...>>{}(
-            std::forward<TraitsTuple>(traits_tuple),
-            std::forward<FsmT>(fsm),
-            std::forward<State>(state),
-            std::forward<Event>(event)
-        );
+        else {
+            executeAction<IndexSequence<Is...>>{}(
+                std::forward<TraitsTuple>(traits_tuple),
+                std::forward<FsmT>(fsm),
+                std::forward<State>(state),
+                std::forward<Event>(event)
+            );
+        }
     }
 };
 
@@ -204,11 +209,13 @@ template<size_type I, size_type... Is> struct propagateActionImpl<IndexSequence<
                 std::forward<state_fsm_t>(state),
                 std::forward<Event>(event)
             );
-            return;
+            // return;
         }
-        propagateActionImpl<IndexSequence<Is...>>{}(
-            std::forward<FsmT>(fsm), std::forward<Event>(event)
-        );
+        else {
+            propagateActionImpl<IndexSequence<Is...>>{}(
+                std::forward<FsmT>(fsm), std::forward<Event>(event)
+            );
+        }
     }
 };
 } // namespace detail

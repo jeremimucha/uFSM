@@ -7,6 +7,9 @@
 
 namespace ufsm
 {
+
+template<typename T> struct InitialTransitionEvent { };
+
 namespace back
 {
 namespace detail
@@ -22,7 +25,9 @@ struct trySetInitialState<State, true> {
     template<typename FsmT>
     constexpr inline void operator()(FsmT&& fsm) const noexcept
     {
-        std::forward<FsmT>(fsm).set_initial_state(initial_state_v<typename std::decay_t<FsmT>::InitialState>);
+        std::forward<FsmT>(fsm).set_initial_state(
+            initial_state_v<typename std::decay_t<FsmT>::InitialState>
+        );
     }
 };
 

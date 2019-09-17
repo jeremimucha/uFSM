@@ -19,13 +19,39 @@ template<typename State, typename = void_t<>, typename... Args>
 struct HasEntryT : std::false_type { };
 
 template<typename State, typename... Args>
+using state_entry_call = decltype(std::declval<State>().entry(std::declval<Args>()...));
+
+template<typename State, typename... Args>
 struct HasEntryT<State,
-                 void_t<decltype(std::declval<State>().entry(std::declval<Args>()...))>,
+                 void_t<state_entry_call<State, Args...>>,
                  Args...>
 : std::true_type { };
 
 template<typename State, typename... Args>
 constexpr inline auto HasEntry{HasEntryT<State, void, Args...>::value};
+
+struct NoEntryAction { };
+struct EntryActionFsm { };
+struct EntryActionFsmEvent { };
+
+template<typename State, typename FsmT, typename = void_t<>>
+struct SelectEntryActionFsmT { using type = NoEntryAction; };
+
+template<typename State, typename FsmT>
+struct SelectEntryActionFsmT<State, FsmT, void_t<state_entry_call<State, FsmT>>> {
+    using type = EntryActionFsm;
+};
+
+template<typename State, typename FsmT, typename Event, typename = void_t<>>
+struct SelectEntryActionFsmEventT : SelectEntryActionFsmT<State, FsmT> { };
+
+template<typename State, typename FsmT, typename Event>
+struct SelectEntryActionFsmEventT<State, FsmT, Event, void_t<state_entry_call<State, FsmT, Event>>> {
+    using type = EntryActionFsmEvent;
+};
+
+template<typename State, typename FsmT, typename Event>
+using SelectEntryActionSignature = typename SelectEntryActionFsmEventT<State, FsmT, Event>::type;
 
 template<typename State, bool = IsFsm<State>>
 struct tryEnter;
@@ -50,7 +76,6 @@ struct fsmEntry {
     constexpr inline void operator()(FsmT&& fsm, State&& state, Event&& event) const noexcept
     {
         operator()(fsm, state);
-        // std::forward<State>(state).dispatch_event(std::forward<Event>(event));
         detail::tryDispatch<State>{}(std::forward<State>(state), std::forward<Event>(event));
     }
 };
@@ -69,7 +94,6 @@ struct fsmEntry<FsmT_, State_, true> {
     constexpr inline void operator()(FsmT&& fsm, State&& state, Event&& event) const noexcept
     {
         operator()(fsm, state);
-        // std::forward<State>(state).dispatch_event(std::forward<Event>(event));
         detail::tryDispatch<State>{}(std::forward<State>(state), std::forward<Event>(event));
     }
 };
@@ -105,9 +129,15 @@ struct enterCurrentState<IndexSequence<I, Is...>> {
                 std::forward<FsmT>(fsm),
                 Get<I>(std::forward<FsmT>(fsm))
             );
-            return;
+            // As a potential minor optimization dispatch the event directly to the state `I`
+            // rather than calling .dispatch_event() on the state, which will make it necessary
+            // to iterate again at runtime
+            // return;
+
         }
-        enterCurrentState<IndexSequence<Is...>>{}(std::forward<FsmT>(fsm));
+        else {
+            enterCurrentState<IndexSequence<Is...>>{}(std::forward<FsmT>(fsm));
+        }
     }
 };
 
@@ -130,6 +160,7 @@ struct propagateEntry<State, InitialStateEntryPolicy> {
     template<typename FsmT>
     constexpr inline void operator()(FsmT&& fsm) const noexcept {
         detail::trySetInitialState<std::decay_t<FsmT>>{}(std::forward<FsmT>(fsm));
+        // The optimization would also require an event dispatch directly to the InitialState here
     }
 };
 

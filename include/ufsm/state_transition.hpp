@@ -223,7 +223,9 @@ struct stateTransitionImpl {
                 std::forward<TTraits>(traits), std::forward<State>(state));
             return true;
         }
-        return false;
+        else {
+            return false;
+        }
     }
 };
 
@@ -234,7 +236,8 @@ struct stateTransitionImpl<FsmT_, TTraits_, Event_, true> {
     constexpr inline bool operator()(FsmT&& fsm, TTraits&& ttraits, State&& state, Event&& event) const noexcept
     {
         if (fsmGuard<FsmT, TTraits, Event>{}(fsm, ttraits, event)) {
-            fsmExit<FsmT, State>{}(fsm, state);
+            // fsmExit<FsmT, State>{}(fsm, state);
+            fsmExit<State, FsmT, Event>{}(state, fsm, event);
             fsmAction<FsmT, Event, TTraits>{}(fsm, event, ttraits, state);
             using ttraits_t = std::decay_t<TTraits>;
             using fsm_statelist = GetStateList<std::decay_t<FsmT>>;
@@ -251,7 +254,9 @@ struct stateTransitionImpl<FsmT_, TTraits_, Event_, true> {
             );
             return true;
         }
-        return false;
+        else {
+            return false;
+        }
     }
 };
 

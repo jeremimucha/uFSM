@@ -44,6 +44,76 @@ constexpr inline auto HasHandleEvent{HasHandleEventT<State,Args...>::value};
 // to be recursive - all composite states need to be walked all the way down - if there's a nested
 // composite state which can handle the given event the parent state of the composite handling
 // the event needs to be included in the potential handlers list.
+
+// TODO: Use this function if it's necessary to execute the transition explicitly
+// once the state reference is already available, to avoid iteration.
+template<typename State, typename FsmT, typename Event>
+constexpr inline void handle_dispatch_event(State&& state, FsmT&& fsm, Event&& event) noexcept
+{
+    using state_t = detail::BaseFsmState<State>;
+    using event_t = std::decay_t<Event>;
+    detail::tryDispatch<State>{}(state, event);
+    // down from here - cast to the actual State type (if state is Fsm)
+    // auto&& state = detail::asBaseState(state_fsm);
+    using detail::asBaseState;
+    logging::fsm_log_event(fsm, asBaseState(state), event);
+    if constexpr (detail::HasHandleEvent<state_t, FsmT, Event>) {
+        state.handle_event(fsm, std::forward<Event>(event));
+    }
+    stateTransition<event_t, std::decay_t<FsmT>, State>{}(
+        std::forward<FsmT>(fsm),
+        std::forward<State>(state),
+        std::forward<Event>(event)
+        );
+}
+
+template<typename Indices> struct dispatchEvent;
+
+template<> struct dispatchEvent<IndexSequence<>> {
+    template<typename FsmT, typename Event>
+    constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept
+    {
+        /* nop */
+    }
+};
+
+template<size_type I, size_type... Is> struct dispatchEvent<IndexSequence<I, Is...>> {
+    template<typename FsmT, typename Event>
+    constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept
+    {
+        if (I == fsm.state()) {
+            // using state_fsm_t = StateAt<I, FsmT>;
+            // using state_t = detail::BaseFsmState<state_fsm_t>;
+            // using event_t = std::decay_t<Event>;
+            // decltype(auto) state_fsm = Get<I>(fsm);
+            // detail::tryDispatch<state_fsm_t>{}(state_fsm, event);
+            // // down from here - cast to the actual State type (if state is Fsm)
+            // // auto&& state = detail::asBaseState(state_fsm);
+            // using detail::asBaseState;
+            // logging::fsm_log_event(fsm, asBaseState(state_fsm), event);
+            // if constexpr (detail::HasHandleEvent<state_t, FsmT, Event>) {
+            //     state_fsm.handle_event(fsm, std::forward<Event>(event));
+            // }
+            // stateTransition<event_t, std::decay_t<FsmT>, state_fsm_t>{}(
+            //     std::forward<FsmT>(fsm),
+            //     std::forward<state_fsm_t>(state_fsm),
+            //     std::forward<Event>(event)
+            //     );
+            // return;
+            handle_dispatch_event(
+                Get<I>(std::forward<FsmT>(fsm)),
+                std::forward<FsmT>(fsm),
+                std::forward<Event>(event)
+            );
+        }
+        else {
+            dispatchEvent<IndexSequence<Is...>>{}(
+                std::forward<FsmT>(fsm), std::forward<Event>(event)
+            );
+        }
+    }
+};
+
 template<typename FsmT, typename Event, size_type Idx, size_type... Idxs>
 constexpr inline void
 dispatch_event(FsmT&& fsm, Event&& event, IndexSequence<Idx,Idxs...>) noexcept;
@@ -54,18 +124,15 @@ dispatch_event(FsmT&& fsm, Event&& event, IndexSequence<Idx,Idxs...>) noexcept
 {
     if (Idx == fsm.state()) {
         // This may be ufsm::Fsm<State, ...>, rather than the State itself
-        // decay into the underlying type for now
-        // to correctly handle hierarhical fsm's we'll need to provide overrides for
-        // states which are Fsm's themselves
         // We can't determine statically what's the current active state of the nested Fsm
-        // -> we'll need to dispatch the event to the nested Fsm and check at runtime
+        // -> dispatch the event to the nested Fsm and check at runtime
         // if the event was handled, if it wasn't -> let the parent (current) state handle
         // the event.
         // Alternatively just dispatch the event to the nested Fsm and than handle it
         // in the parent (current) state anyway?
         // Optimization (?) -> check statically if any of the nested states can handle the
         // event, don't dispatch if it can't - general optimization of dispatch_event,
-        // To handle the event in the parent (current) state we'll need to cast the nested Fsm
+        // To handle the event in the parent (current) state, cast the nested Fsm
         // to the type that's actually in the Statelist of the current Fsm
         using state_fsm_t = StateAt<Idx, FsmT>;
         using state_t = detail::BaseFsmState<state_fsm_t>;

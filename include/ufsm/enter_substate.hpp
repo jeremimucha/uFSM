@@ -116,9 +116,11 @@ struct applySubstateAction<NextState, IndexSequence<I, Is...>> {
             );
             return;
         }
-        applySubstateAction<NextState, IndexSequence<Is...>>{}(
-            std::forward<SubfsmT>(fsm), std::forward<Event>(event)
-        );
+        else {
+            applySubstateAction<NextState, IndexSequence<Is...>>{}(
+                std::forward<SubfsmT>(fsm), std::forward<Event>(event)
+            );
+        }
     }
 };
 

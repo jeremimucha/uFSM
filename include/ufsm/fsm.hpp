@@ -35,7 +35,6 @@ public:
     constexpr explicit Fsm(initial_state<State> init_state) noexcept
         : Base{init_state}
     {
-        // back::fsm_entry(*this, back::Get<StateIndex<typelist<States...>,State>>(*this));
         back::fsmEntry<decltype(*this),
             decltype(back::Get<StateIndex<typelist<States...>,State>>(*this))>{}(
                 *this, back::Get<StateIndex<typelist<States...>,State>>(*this));
@@ -48,14 +47,15 @@ public:
         back::fsm_entry(*this, back::Get<StateIndex<typelist<States...>,State>>(*this));
     }
 
-    template<typename FsmT, typename Event, size_type Idx, size_type... Idxs>
-    friend constexpr inline void
-    ::ufsm::back::dispatch_event(FsmT&& fsm, Event&& event, IndexSequence<Idx,Idxs...>) noexcept;
+    // template<typename FsmT, typename Event, size_type Idx, size_type... Idxs>
+    // friend constexpr inline void
+    // ::ufsm::back::dispatch_event(FsmT&& fsm, Event&& event, IndexSequence<Idx,Idxs...>) noexcept;
 
     template<typename Event>
     constexpr inline void dispatch_event(Event&& event) noexcept
     {
-        ::ufsm::back::dispatch_event(*this, std::forward<Event>(event), Indices{});
+        // ::ufsm::back::dispatch_event(*this, std::forward<Event>(event), Indices{});
+        ::ufsm::back::dispatchEvent<Indices>{}(*this, std::forward<Event>(event));
     }
 
     using Impl::transition_table;
