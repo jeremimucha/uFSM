@@ -35,16 +35,26 @@ public:
     constexpr explicit Fsm(initial_state<State> init_state) noexcept
         : Base{init_state}
     {
-        back::fsmEntry<decltype(*this),
-            decltype(back::Get<StateIndex<typelist<States...>,State>>(*this))>{}(
-                *this, back::Get<StateIndex<typelist<States...>,State>>(*this));
+        back::fsmEntry<decltype(back::Get<StateIndex<typelist<States...>,State>>(*this)),
+                       decltype(*this),
+                       ufsm::InitialTransitionEvent>{}(
+            back::Get<StateIndex<typelist<States...>,State>>(*this),
+            *this,
+            ufsm::InitialTransitionEvent{}
+        );
     }
 
     template<typename State>
     constexpr void set_initial_state(initial_state<State> init_state) noexcept
     {
         Base::set_initial_state(init_state);
-        back::fsm_entry(*this, back::Get<StateIndex<typelist<States...>,State>>(*this));
+        back::fsmEntry<decltype(back::Get<StateIndex<typelist<States...>,State>>(*this)),
+                       decltype(*this),
+                       ufsm::InitialTransitionEvent>{}(
+            back::Get<StateIndex<typelist<States...>,State>>(*this),
+            *this,
+            ufsm::InitialTransitionEvent{}
+        );
     }
 
     // template<typename FsmT, typename Event, size_type Idx, size_type... Idxs>
