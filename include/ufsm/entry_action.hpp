@@ -188,9 +188,7 @@ template<typename State>
 struct propagateEntry<State, InitialStateEntryPolicy> {
     template<typename FsmT, typename Event>
     constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept {
-        detail::trySetInitialState<std::decay_t<FsmT>>{}(
-            std::forward<FsmT>(fsm), std::forward<Event>(event)
-        );
+        detail::trySetInitialState<std::decay_t<FsmT>>{}(std::forward<FsmT>(fsm));
         // The optimization would also require an event dispatch directly to the InitialState here
     }
 };

@@ -17,14 +17,13 @@ namespace detail
 
 template<typename State, bool = IsFsm<std::decay_t<State>>>
 struct trySetInitialState {
-    template<typename Event>
-    constexpr inline void operator()(State const&, Event const&) const noexcept { /* nop */ }
+    constexpr inline void operator()(State const&) const noexcept { /* nop */ }
 };
 
 template<typename State>
 struct trySetInitialState<State, true> {
-    template<typename FsmT, typename Event>
-    constexpr inline void operator()(FsmT&& fsm, Event&&) const noexcept
+    template<typename FsmT>
+    constexpr inline void operator()(FsmT&& fsm) const noexcept
     {
         std::forward<FsmT>(fsm).set_initial_state(
             initial_state_v<typename std::decay_t<FsmT>::InitialState>
