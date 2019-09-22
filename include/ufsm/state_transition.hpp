@@ -244,7 +244,7 @@ struct stateTransitionImpl<FsmT_, TTraits_, Event_, true> {
             constexpr auto next_state_idx = StateIndex<fsm_statelist, NextState<ttraits_t>>;
             fsm.state(next_state_idx);
             auto&& next_state = Get<next_state_idx>(fsm);
-            using next_state_t = std::decay_t<decltype(next_state)>;
+            // using next_state_t = std::decay_t<decltype(next_state)>;
             // enterSubstate<next_state_t, ttraits_t>{}(next_state, event);
             logging::fsm_log_state_change(fsm, detail::asBaseState(state), next_state);
             fsmEntry<decltype(next_state), FsmT, Event>{}(

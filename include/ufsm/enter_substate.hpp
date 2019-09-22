@@ -63,7 +63,7 @@ struct applySubstateActionImpl {
     constexpr inline void operator()(TraitsTuple&& traits_tuple, Subfsm&& fsm, Event&& event) const noexcept
     {
         // std::cerr << __PRETTY_FUNCTION__ << "\n";
-        using traits_tuple_t = std::decay_t<TraitsTuple>;
+        // using traits_tuple_t = std::decay_t<TraitsTuple>;
         using Indices = MakeIndexSequence<TraitsTupleSize>;
         // constexpr auto idx{GetSubstateTTraitsIndex<NextState, traits_tuple_t, Indices>};
         decltype(auto) ttraits{std::get<0>(std::forward<TraitsTuple>(traits_tuple))};

@@ -62,10 +62,6 @@ template<typename T, typename U, bool = has_initial_state<T>::value> struct init
 template<typename T, typename U>
 struct initial_state_or<T, U, true> { using type = typename T::InitialState; };
 
-template<typename T> struct get_initial_state {
-    using type = typename T::initial_state;
-};
-
 template<typename FsmT, typename = void_t<>>
 struct HasTransitionTableT : std::false_type { };
 template<typename FsmT>
@@ -97,12 +93,6 @@ struct StateIndexT<List<T,Ts...>, U, Idx>
 
 template<typename List, typename T, size_type Idx = 0>
 constexpr inline auto StateIndex{StateIndexT<List, T, Idx>::value};
-
-template<typename T, typename = void_t<>> struct HasStateListT : std::false_type { };
-template<typename T>
-struct HasStateListT<T, void_t<typename std::decay_t<T>::Statelist>> : std::true_type { };
-template<typename T>
-constexpr inline auto HasStateList{HasStateListT<T>::value};
 
 template<typename T> struct GetStateListT;
 template<template<typename,typename>class FsmT, typename Impl, typename Statelist>

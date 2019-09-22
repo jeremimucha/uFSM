@@ -71,7 +71,7 @@ template<typename Indices> struct dispatchEvent;
 
 template<> struct dispatchEvent<IndexSequence<>> {
     template<typename FsmT, typename Event>
-    constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept
+    constexpr inline void operator()(FsmT&&, Event&&) const noexcept
     {
         /* nop */
     }

@@ -7,6 +7,7 @@
 #include "try_set_initial_state.hpp"
 #include "entry_policy.hpp"
 #include "try_dispatch.hpp"
+#include "dispatch_event.hpp"
 
 
 namespace ufsm
@@ -154,11 +155,14 @@ struct enterCurrentState<IndexSequence<I, Is...>> {
                 std::forward<FsmT>(fsm),
                 std::forward<Event>(event)
             );
-            // As a potential minor optimization dispatch the event directly to the state `I`
-            // rather than calling .dispatch_event() on the state, which will make it necessary
-            // to iterate again at runtime
-            // return;
-
+            // An optimization - dispatch directly into the current state index `I`, to avoid
+            // calling tryDispatch - which would require iterating over states, searching for
+            // the active one, again at runtime.
+            handle_dispatch_event(
+                Get<I>(std::forward<FsmT>(fsm)),
+                std::forward<FsmT>(fsm),
+                std::forward<Event>(event)
+            );
         }
         else {
             enterCurrentState<IndexSequence<Is...>>{}(
@@ -188,8 +192,10 @@ template<typename State>
 struct propagateEntry<State, InitialStateEntryPolicy> {
     template<typename FsmT, typename Event>
     constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept {
-        detail::trySetInitialState<std::decay_t<FsmT>>{}(std::forward<FsmT>(fsm));
-        // The optimization would also require an event dispatch directly to the InitialState here
+        detail::trySetInitialState<std::decay_t<FsmT>>{}(
+            std::forward<FsmT>(fsm),
+            std::forward<Event>(event)
+        );
     }
 };
 

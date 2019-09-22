@@ -3,6 +3,7 @@
 #include "logging.hpp"
 #include "traits.hpp"
 #include "transition_guard.hpp"
+#include "transition_table.hpp"
 #include <type_traits>
 #include <utility>
 
@@ -64,7 +65,7 @@ template<> struct propagateActionImpl<IndexSequence<>> {
 
 template<typename State, bool = IsFsm<State>> struct propagateAction {
     template<typename State_, typename Event>
-    constexpr inline void operator()(State_&& fsm, Event&& event) const noexcept
+    constexpr inline void operator()(State_&&, Event&&) const noexcept
     {
         /* nop */
     }

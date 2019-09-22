@@ -4,7 +4,6 @@
 #include "traits.hpp"
 #include "fsm_state.hpp"
 #include "get.hpp"
-#include "entry_action.hpp"
 
 namespace ufsm
 {
