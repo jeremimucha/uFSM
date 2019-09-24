@@ -201,7 +201,7 @@ struct On {
     template<typename SM> constexpr void exit(SM const&) const noexcept { }
 
     template<typename T>
-    void update(T rhs) noexcept
+    void update(T rhs)
     {
         switch (op_) {
         case '+':

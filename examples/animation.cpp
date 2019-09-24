@@ -185,7 +185,7 @@ inline void sIdle::entry(Animation& fsm) noexcept
     // std::cerr << "\tIdle::entry, counter = " << fsm.counter << "\n";
 }
 
-void sAnimating::entry(Animation const& fsm) const
+void sAnimating::entry(Animation const& /* fsm */) const
 {
     // std::cerr << "\tAnimating::entry, counter = " << fsm.counter << "\n";
 }
@@ -194,7 +194,7 @@ void sAnimating::exit(Animation const&) const
 {
 }
 
-void sPaused::entry(Animation const& fsm) const
+void sPaused::entry(Animation const& /* fsm */) const
 {
     // std::cerr << "\tPaused::entry, counter = " << fsm.counter << "\n";
 }

@@ -220,7 +220,8 @@ struct stateTransitionImpl {
         if (fsmGuard<FsmT, TTraits, Event>{}(fsm, traits, event)) {
             fsmAction<FsmT, Event, TTraits>{}(
                 std::forward<FsmT>(fsm), std::forward<Event>(event),
-                std::forward<TTraits>(traits), std::forward<State>(state));
+                std::forward<TTraits>(traits), std::forward<State>(state)
+            );
             return true;
         }
         else {
@@ -246,7 +247,9 @@ struct stateTransitionImpl<FsmT_, TTraits_, Event_, true> {
             auto&& next_state = Get<next_state_idx>(fsm);
             // using next_state_t = std::decay_t<decltype(next_state)>;
             // enterSubstate<next_state_t, ttraits_t>{}(next_state, event);
-            logging::fsm_log_state_change(fsm, detail::asBaseState(state), next_state);
+            logging::fsm_log_state_change(
+                fsm, detail::asBaseState(state), detail::asBaseState(next_state)
+            );
             fsmEntry<decltype(next_state), FsmT, Event>{}(
                 std::forward<decltype(next_state)>(next_state),
                 std::forward<FsmT>(fsm),
@@ -313,7 +316,7 @@ struct stateTransition<Event_, FsmT_, State_, detail::AnyTransitionTraits> {
     constexpr inline void operator()(FsmT&& fsm, State&& state, Event&& event) noexcept
     {
         using state_t = detail::BaseFsmState<std::decay_t<State>>;
-        using event_t = std::decay_t<Event>;
+        // using event_t = std::decay_t<Event>;
         // auto&& ttraits = Get_transition_traits<state_t, ufsm::AnyEvent_t>(fsm.transition_table());
         auto&& ttraitstuple = getTransitionTraits<state_t, ufsm::AnyEvent_t>(fsm.transition_table());
         // auto&& ttraits = std::get<0>(ttraitstuple);

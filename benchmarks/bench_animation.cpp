@@ -42,7 +42,7 @@ struct animation_logger {
     {
     }
     template<typename Guard>
-    void log_guard(Animation const&, Guard const&, bool result) const noexcept
+    void log_guard(Animation const&, Guard const&, bool /* result */) const noexcept
     {
     }
     template<typename Action, typename Event>
@@ -142,12 +142,12 @@ inline void sIdle::entry(Animation& fsm) noexcept
     // std::cerr << "\tIdle::entry, counter = " << fsm.counter << "\n";
 }
 
-void sAnimating::entry(Animation const& fsm) const
+void sAnimating::entry(Animation const& /* fsm */) const
 {
     // std::cerr << "\tAnimating::entry, counter = " << fsm.counter << "\n";
 }
 
-void sPaused::entry(Animation const& fsm) const
+void sPaused::entry(Animation const& /* fsm */) const
 {
     // std::cerr << "\tPaused::entry, counter = " << fsm.counter << "\n";
 }

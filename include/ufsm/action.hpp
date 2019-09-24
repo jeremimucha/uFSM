@@ -150,7 +150,9 @@ constexpr inline void fsm_action(FsmT&& fsm, Event&& event, TTraits&& ttraits) n
     using fsm_t = std::decay_t<FsmT>;
     using event_t = std::decay_t<Event>;
     using ttraits_t = std::decay_t<TTraits>;
-    fsmAction<fsm_t, event_t, ttraits_t>{}(std::forward<FsmT>(fsm), std::forward<Event>(event), std::forward<TTraits>(ttraits));
+    fsmAction<fsm_t, event_t, ttraits_t>{}(
+        std::forward<FsmT>(fsm), std::forward<Event>(event), std::forward<TTraits>(ttraits)
+    );
 }
 
 namespace detail

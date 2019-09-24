@@ -64,7 +64,7 @@ struct applySubstateActionImpl {
     {
         // std::cerr << __PRETTY_FUNCTION__ << "\n";
         // using traits_tuple_t = std::decay_t<TraitsTuple>;
-        using Indices = MakeIndexSequence<TraitsTupleSize>;
+        // using Indices = MakeIndexSequence<TraitsTupleSize>;
         // constexpr auto idx{GetSubstateTTraitsIndex<NextState, traits_tuple_t, Indices>};
         decltype(auto) ttraits{std::get<0>(std::forward<TraitsTuple>(traits_tuple))};
         fsmAction<Subfsm, Event, std::decay_t<decltype(ttraits)>>{}(
@@ -145,7 +145,7 @@ struct enterSubstate<State, TTraits, true, true> {
         // std::cerr << __PRETTY_FUNCTION__ << "\n";
         using subfsm_t = std::decay_t<Subfsm>;
         using ttraits_t = std::decay_t<TTraits>;
-        using event_t = std::decay_t<Event>;
+        // using event_t = std::decay_t<Event>;
         using subfsm_statelist = GetStateList<subfsm_t>;
         using next_substate_t = detail::GetSubstate<ttraits_t>;
         detail::applySubstateAction<next_substate_t, typename subfsm_t::Indices>{}(
