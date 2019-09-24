@@ -8,16 +8,16 @@
 namespace ufsm
 {
 
-using size_type = int;
+using SizeT = int;
 
-template<size_type Idx>
-using IndexConstant = std::integral_constant<size_type, Idx>;
+template<SizeT Idx>
+using IndexConstant = std::integral_constant<SizeT, Idx>;
 
-template<size_type... Idxs>
-using IndexSequence = std::integer_sequence<size_type, Idxs...>;
+template<SizeT... Idxs>
+using IndexSequence = std::integer_sequence<SizeT, Idxs...>;
 
-template<size_type N>
-using MakeIndexSequence = std::make_integer_sequence<size_type, N>;
+template<SizeT N>
+using MakeIndexSequence = std::make_integer_sequence<SizeT, N>;
 
 template<typename... Ts>
 using IndexSequenceFor = MakeIndexSequence<sizeof...(Ts)>;
@@ -47,16 +47,16 @@ struct ContainsT : ContainsTImpl<C,T> { };
 template<typename C, typename T>
 static constexpr inline auto Contains{ContainsTImpl<C,T>::value};
 
-template<typename T> struct initial_state { };
-template<typename T> constexpr inline auto initial_state_v{initial_state<T>{}};
+template<typename T> struct initial_state_t { };
+template<typename T> constexpr inline auto initial_state_v{initial_state_t<T>{}};
 
-template<typename T, typename = void_t<>> struct has_initial_state : std::false_type { };
+template<typename T, typename = void_t<>> struct HasInitialStateT : std::false_type { };
 template<typename T>
-struct has_initial_state<T, void_t<typename T::InitialState>> : std::true_type { };
+struct HasInitialStateT<T, void_t<typename T::InitialState>> : std::true_type { };
 template<typename T>
-constexpr inline auto has_initial_state_v{has_initial_state<T>::value};
+constexpr inline auto HasInitialState{HasInitialStateT<T>::value};
 
-template<typename T, typename U, bool = has_initial_state<T>::value> struct initial_state_or {
+template<typename T, typename U, bool = HasInitialState<T>> struct initial_state_or {
     using type = U;
 };
 template<typename T, typename U>
@@ -80,10 +80,10 @@ struct StateTraitsT<State, true> {
     using state_type = ::ufsm::Fsm<State>;
 };
 
-template<typename List, typename T, size_type N = 0>
+template<typename List, typename T, SizeT N = 0>
 struct StateIndexT { };
 
-template<template<class...>class List, typename U, typename T, typename... Ts, size_type Idx>
+template<template<class...>class List, typename U, typename T, typename... Ts, SizeT Idx>
 struct StateIndexT<List<T,Ts...>, U, Idx>
     : std::conditional_t<std::is_same_v<T,U>,
                          IndexConstant<Idx>,
@@ -91,7 +91,7 @@ struct StateIndexT<List<T,Ts...>, U, Idx>
 {
 };
 
-template<typename List, typename T, size_type Idx = 0>
+template<typename List, typename T, SizeT Idx = 0>
 constexpr inline auto StateIndex{StateIndexT<List, T, Idx>::value};
 
 template<typename T> struct GetStateListT;

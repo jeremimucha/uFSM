@@ -1,20 +1,15 @@
 #pragma once
 
 #include "traits.hpp"
-// #include "fsm_state.hpp"
 #include "fsmfwd.hpp"
 #include "fsm_impl.hpp"
 #include "transition_table.hpp"
 #include "dispatch_event.hpp"
-// #include "get.hpp"
 #include "logging.hpp"
 
 
 namespace ufsm
 {
-
-// template<typename Impl, typename Statelist = detail::get_fsm_state_list_t<Impl>>
-// class Fsm;
 
 template<typename Impl, typename... States>
 class Fsm<Impl, typelist<States...>>
@@ -32,7 +27,7 @@ public:
     constexpr Fsm() noexcept = default;
 
     template<typename State>
-    constexpr explicit Fsm(initial_state<State> init_state) noexcept
+    constexpr explicit Fsm(initial_state_t<State> init_state) noexcept
         : Base{init_state}
     {
         back::fsmEntry<decltype(back::Get<StateIndex<typelist<States...>,State>>(*this)),
@@ -45,7 +40,7 @@ public:
     }
 
     template<typename State>
-    constexpr void set_initial_state(initial_state<State> init_state) noexcept
+    constexpr void set_initial_state(initial_state_t<State> init_state) noexcept
     {
         Base::set_initial_state(init_state);
         back::fsmEntry<decltype(back::Get<StateIndex<typelist<States...>,State>>(*this)),
@@ -57,7 +52,7 @@ public:
         );
     }
 
-    // template<typename FsmT, typename Event, size_type Idx, size_type... Idxs>
+    // template<typename FsmT, typename Event, SizeT Idx, SizeT... Idxs>
     // friend constexpr inline void
     // ::ufsm::back::dispatch_event(FsmT&& fsm, Event&& event, IndexSequence<Idx,Idxs...>) noexcept;
 
@@ -70,6 +65,5 @@ public:
 
     using Impl::transition_table;
 };
-
 
 } // namespace ufsm

@@ -58,30 +58,6 @@ struct tryExit;
 
 } // namespace detail
 
-// template<typename State_, typename ExitActionSignature,
-//          typename... Args_>
-// struct fsmExitT;
-
-// template<typename State, typename... Args_>
-// struct fsmExitT<State, detail::NoExitAction, Args_...>{
-//     template<typename State, typename... Args>
-//     constexpr inline void operator()(State&& state, Args&&... args) const noexcept
-//     {
-//         detail::tryExit<State>{}(std::forward<State>(state));
-//     }
-// };
-// // Select the correct number of arguments somehow?
-// template<typename State, typename... Args>
-// struct fsmExitT<State, detail::ExitActionFsm, Args...> {
-//     template<typename State, typename... Args>
-//     constexpr inline void operator()(State&& state, Args&&... args) const noexcept
-//     {
-//         detail::tryExit<State>{}(std::forward<State>(state));
-//         logging::fsm_log_exit(fsm, detail::asBaseState(state));
-//         std::forward<State>(state).exit(std::forward<Args>(args)...);
-//     }
-// };
-
 // Intentionally do not decay the types here - HasExit should decide if FsmT has an exit()
 // member callable with the given state including the qualifiers
 template<typename State_, typename FsmT_, typename Event_,
@@ -116,35 +92,6 @@ struct fsmExit<State_, FsmT_, Event_, detail::ExitActionFsmEvent> {
     }
 };
 
-// template<typename FsmT_, typename State_,
-//          bool = detail::HasExit<State_, FsmT_>>
-// struct fsmExit {
-//     template<typename FsmT, typename State>
-//     constexpr inline void operator()(FsmT&&, State&& state) const noexcept
-//     {
-//         detail::tryExit<State>{}(std::forward<State>(state));
-//     }
-// };
-
-// template<typename FsmT_, typename State_>
-// struct fsmExit<FsmT_, State_, true> {
-//     template<typename FsmT, typename State>
-//     constexpr inline void operator()(FsmT&& fsm, State&& state) const noexcept
-//     {
-//         detail::tryExit<State>{}(std::forward<State>(state));
-//         logging::fsm_log_exit(fsm, detail::asBaseState(state));
-//         std::forward<State>(state).exit(std::forward<FsmT>(fsm));
-//     }
-// };
-
-// template<typename FsmT, typename State>
-// constexpr inline void fsm_exit(FsmT&& fsm, State&& state) noexcept
-// {
-//     // Intentionally do not decay the types here - HasExit should decide if FsmT has an exit()
-//     // member callable with the given state including the qualifiers
-//     fsmExit<FsmT, State>{}(std::forward<FsmT>(fsm), std::forward<State>(state));
-// }
-
 namespace detail
 {
 // TODO: optimization - narrow down the Indices to only those that refer to states
@@ -155,7 +102,7 @@ struct exitCurrentState<IndexSequence<>> {
     template<typename FsmT, typename Event>
     constexpr inline void operator()(FsmT&&, Event&&) const noexcept {/* nop */}
 };
-template<size_type I, size_type... Is>
+template<SizeT I, SizeT... Is>
 struct exitCurrentState<IndexSequence<I, Is...>> {
     template<typename FsmT, typename Event>
     constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept

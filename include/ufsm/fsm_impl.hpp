@@ -14,11 +14,11 @@ namespace back
 template<typename IndexSequence, typename... States>
 class Fsm_impl;
 
-// template<size_type Idx, typename FsmT>
+// template<SizeT Idx, typename FsmT>
 // inline constexpr decltype(auto) Get(FsmT&& fsm) noexcept;
 // Inheriting publicly because clang insists that declaring the `Get` template a friend makes the
 // calls ambiguous. Inheriting publicly and not declaring `Get` a friend for now as a workaound.
-template<size_type... Indices, typename... States>
+template<SizeT... Indices, typename... States>
 class Fsm_impl<IndexSequence<Indices...>, States...>
     : public FsmState<Indices, typename StateTraitsT<States>::state_type>...
 {
@@ -26,7 +26,7 @@ public:
     constexpr Fsm_impl() noexcept = default;
 
     template<typename State>
-    constexpr explicit Fsm_impl(initial_state<State>) noexcept
+    constexpr explicit Fsm_impl(initial_state_t<State>) noexcept
         : state_{StateIndex<typelist<States...>,State>}
         {
         }
@@ -37,37 +37,37 @@ public:
         { }
 
     template<typename State>
-    constexpr void set_initial_state(initial_state<State>) noexcept
+    constexpr void set_initial_state(initial_state_t<State>) noexcept
     {
         state_ = StateIndex<typelist<States...>,State>;
     }
 
-    constexpr inline size_type state() const noexcept { return state_; }
-    constexpr inline void state(size_type new_state) noexcept { state_ = new_state; }
+    constexpr inline SizeT state() const noexcept { return state_; }
+    constexpr inline void state(SizeT new_state) noexcept { state_ = new_state; }
 
-    template<size_type Idx, typename State> friend inline constexpr
+    template<SizeT Idx, typename State> friend inline constexpr
     FsmState_t<Idx,State>& Get_impl(FsmState<Idx,State>& state) noexcept;
-    template<size_type Idx, typename State> friend inline constexpr
+    template<SizeT Idx, typename State> friend inline constexpr
     FsmState_t<Idx,State> const& Get_impl(FsmState<Idx,State> const& state) noexcept;
-    template<size_type Idx, typename State> friend inline constexpr
+    template<SizeT Idx, typename State> friend inline constexpr
     FsmState_t<Idx,State>&& Get_impl(FsmState<Idx,State>&& state) noexcept;
-    template<size_type Idx, typename State> friend inline constexpr
+    template<SizeT Idx, typename State> friend inline constexpr
     FsmState_t<Idx,State> const&& Get_impl(FsmState<Idx,State> const&& state) noexcept;
 
-    template<typename State, size_type Idx> friend inline constexpr
+    template<typename State, SizeT Idx> friend inline constexpr
     FsmState_t<Idx,State>& get_state_impl(FsmState<Idx,State>& state) noexcept;
-    template<typename State, size_type Idx> friend inline constexpr
+    template<typename State, SizeT Idx> friend inline constexpr
     FsmState_t<Idx,State> const& get_state_impl(FsmState<Idx,State> const& state) noexcept;
-    template<typename State, size_type Idx> friend inline constexpr
+    template<typename State, SizeT Idx> friend inline constexpr
     FsmState_t<Idx,State>&& get_state_impl(FsmState<Idx,State>&& state) noexcept;
-    template<typename State, size_type Idx> friend inline constexpr
+    template<typename State, SizeT Idx> friend inline constexpr
     FsmState_t<Idx,State> const&& get_state_impl(FsmState<Idx,State> const&& state) noexcept;
 
     // clang insists that this friend declaration makes the calls to Get ambiguous
-    // template<size_type Idx, typename FsmT>
+    // template<SizeT Idx, typename FsmT>
     // friend constexpr decltype(auto) Get(FsmT&& fsm) noexcept;
 private:
-    size_type state_{};
+    SizeT state_{};
 };
 
 } // namespace back

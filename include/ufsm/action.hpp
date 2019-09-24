@@ -126,24 +126,6 @@ struct fsmAction<FsmT_, Event_, TTraits_, detail::TransitionActionFsmEvent> {
     }
 };
 
-
-// template <typename FsmT_, typename Event_, typename TTraits_,
-//           bool = detail::HasAction<TTraits_, FsmT_, Event_>>
-// struct fsmAction {
-//     template <typename FsmT, typename Event, typename TTraits>
-//     constexpr inline void operator()(FsmT&&, Event&&, TTraits&&) const noexcept {/* nop */}
-// };
-
-// template <typename FsmT_, typename Event_, typename TTraits_>
-// struct fsmAction<FsmT_, Event_, TTraits_, true> {
-//     template <typename FsmT, typename Event, typename TTraits>
-//     constexpr inline void operator()(FsmT&& fsm, Event&& event, TTraits&& ttraits) const noexcept
-//     {
-//         logging::fsm_log_action(fsm, ttraits.action, event);
-//         std::forward<TTraits>(ttraits).action(std::forward<FsmT>(fsm), std::forward<Event>(event));
-//     }
-// };
-
 template <typename FsmT, typename Event, typename TTraits>
 constexpr inline void fsm_action(FsmT&& fsm, Event&& event, TTraits&& ttraits) noexcept
 {
@@ -165,7 +147,7 @@ template<> struct executeAction<IndexSequence<>> {
     }
 };
 
-template<size_type I, size_type... Is> struct executeAction<IndexSequence<I, Is...>> {
+template<SizeT I, SizeT... Is> struct executeAction<IndexSequence<I, Is...>> {
     template<typename TraitsTuple, typename FsmT, typename State, typename Event>
     constexpr inline void
     operator()(TraitsTuple&& traits_tuple, FsmT&& fsm, State&& state, Event&& event) const noexcept
@@ -192,7 +174,7 @@ template<size_type I, size_type... Is> struct executeAction<IndexSequence<I, Is.
     }
 };
 
-template<size_type I, size_type... Is> struct propagateActionImpl<IndexSequence<I, Is...>> {
+template<SizeT I, SizeT... Is> struct propagateActionImpl<IndexSequence<I, Is...>> {
     template<typename FsmT, typename Event>
     constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept
     {

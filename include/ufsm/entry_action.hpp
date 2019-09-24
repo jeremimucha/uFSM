@@ -79,53 +79,33 @@ struct fsmEntry {
 
 template<typename State_, typename FsmT_, typename Event_>
 struct fsmEntry<State_, FsmT_, Event_, detail::EntryActionFsm> {
-    // template<typename State, typename FsmT, typename Event>
-    // constexpr inline void operator()(FsmT&& fsm, State&& state) const noexcept
-    // {
-    //     logging::fsm_log_entry(fsm, detail::asBaseState(state));
-    //     // TODO: How to reliably keep both std::forwards here?
-    //     std::forward<State>(state).entry(std::forward<FsmT>(fsm));
-    //     detail::propagateEntry<std::decay_t<State>>{}(std::forward<State>(state));
-    // }
     template<typename State, typename FsmT, typename Event>
     constexpr inline void operator()(State&& state, FsmT&& fsm, Event&& event) const noexcept
     {
-        // operator()(fsm, state);
         logging::fsm_log_entry(fsm, detail::asBaseState(state));
         // TODO: How to reliably keep both std::forwards here?
         std::forward<State>(state).entry(std::forward<FsmT>(fsm));
         detail::propagateEntry<std::decay_t<State>>{}(std::forward<State>(state), std::forward<Event>(event));
-        detail::tryDispatch<State>{}(std::forward<State>(state), std::forward<Event>(event));
+        // detail::tryDispatch<State>{}(std::forward<State>(state), std::forward<Event>(event));
     }
 };
 
 template<typename State_, typename FsmT_, typename Event_>
 struct fsmEntry<State_, FsmT_, Event_, detail::EntryActionFsmEvent> {
-    // template<typename State, typename FsmT, typename Event>
-    // constexpr inline void operator()(FsmT&& fsm, State&& state) const noexcept
-    // {
-    //     logging::fsm_log_entry(fsm, detail::asBaseState(state));
-    //     // TODO: How to reliably keep both std::forwards here?
-    //     std::forward<State>(state).entry(std::forward<FsmT>(fsm));
-    //     detail::propagateEntry<std::decay_t<State>>{}(std::forward<State>(state));
-    // }
     template<typename State, typename FsmT, typename Event>
     constexpr inline void operator()(State&& state, FsmT&& fsm, Event&& event) const noexcept
     {
-        // operator()(fsm, state);
         logging::fsm_log_entry(fsm, detail::asBaseState(state));
         // TODO: How to reliably keep both std::forwards here?
         std::forward<State>(state).entry(std::forward<FsmT>(fsm), std::forward<Event>(event));
         detail::propagateEntry<std::decay_t<State>>{}(std::forward<State>(state), std::forward<Event>(event));
-        detail::tryDispatch<State>{}(std::forward<State>(state), std::forward<Event>(event));
+        // detail::tryDispatch<State>{}(std::forward<State>(state), std::forward<Event>(event));
     }
 };
 
 template<typename State, typename FsmT, typename Event>
 constexpr inline void fsm_entry(State&& state, FsmT&& fsm, Event&& event) noexcept
 {
-    // using fsm_t = std::decay_t<FsmT>;
-    // using state_t = std::decay_t<State>;
     // Intentionally do not decay the types here - HasEntry should decide if FsmT has an entry()
     // member callable with the given state including the qualifiers
     fsmEntry<State, FsmT, Event>{}(
@@ -144,12 +124,11 @@ struct enterCurrentState<IndexSequence<>> {
     constexpr inline void operator()(FsmT const&, Event const&) const noexcept { }
 };
 
-template<size_type I, size_type... Is>
+template<SizeT I, SizeT... Is>
 struct enterCurrentState<IndexSequence<I, Is...>> {
     template<typename FsmT, typename Event>
     constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept {
         if (I == fsm.state()) {
-            // fsm_entry(std::forward<FsmT>(fsm), Get<I>(std::forward<FsmT>(fsm)));
             fsmEntry<StateAt<I, FsmT>, FsmT, Event>{}(
                 Get<I>(std::forward<FsmT>(fsm)),
                 std::forward<FsmT>(fsm),

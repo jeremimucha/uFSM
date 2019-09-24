@@ -120,7 +120,7 @@ struct has_log_entry<FsmT, State,
 template<typename FsmT, typename State>
 constexpr inline auto has_log_entry_v{has_log_entry<FsmT,State>::value};
 
-template <class, int N, size_type... Ns>
+template <class, int N, SizeT... Ns>
 auto get_type_name(const char *ptr, IndexSequence<Ns...>) noexcept {
   static const char str[] = {ptr[N + Ns]..., 0};
   return str;

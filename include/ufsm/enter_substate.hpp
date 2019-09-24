@@ -33,7 +33,7 @@ struct GetSubstateTTraitsIndexT<NextState, TraitsTuple, IndexSequence<>>
     static constexpr auto value{std::tuple_size_v<TraitsTuple>};
 };
 
-template<typename NextStateT, typename TraitsTuple, size_type I, size_type... Is>
+template<typename NextStateT, typename TraitsTuple, SizeT I, SizeT... Is>
 struct GetSubstateTTraitsIndexT<NextStateT, TraitsTuple, IndexSequence<I, Is...>>
     : std::conditional_t<std::is_same_v<NextStateT,
                         ufsm::NextState<std::tuple_element_t<I, TraitsTuple>>>,
@@ -93,7 +93,7 @@ template<typename T> struct show
     }
 };
 
-template<typename NextState, size_type I, size_type... Is>
+template<typename NextState, SizeT I, SizeT... Is>
 struct applySubstateAction<NextState, IndexSequence<I, Is...>> {
     template<typename SubfsmT, typename Event>
     constexpr inline void operator()(SubfsmT&& fsm, Event&& event) const noexcept

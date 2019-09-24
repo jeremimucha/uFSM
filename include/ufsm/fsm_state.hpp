@@ -9,7 +9,7 @@ namespace ufsm
 namespace back
 {
 
-template<size_type Idx, typename State>
+template<SizeT Idx, typename State>
 class FsmState
 {
 private:
@@ -41,33 +41,33 @@ public:
     constexpr State const&& get() const&& noexcept { return std::move(value_); }
 };
 
-template<size_type Idx, typename State>
+template<SizeT Idx, typename State>
 using FsmState_t = typename FsmState<Idx,State>::type;
 
 /* Get */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-template<size_type I, typename U>
+template<SizeT I, typename U>
 inline constexpr FsmState_t<I,U>& Get_impl(FsmState<I,U>& st) noexcept
 {
     return st.get();
 }
-template<size_type I, typename U>
+template<SizeT I, typename U>
 inline constexpr FsmState_t<I,U> const& Get_impl(FsmState<I,U> const& st) noexcept
 {
     return st.get();
 }
-template<size_type I, typename U>
+template<SizeT I, typename U>
 inline constexpr FsmState_t<I,U>&& Get_impl(FsmState<I,U>&& st) noexcept
 {
     return std::move(st).get();
 }
-template<size_type I, typename U>
+template<SizeT I, typename U>
 inline constexpr FsmState_t<I,U>&& Get_impl(FsmState<I,U> const&& st) noexcept
 {
     return std::move(st).get();
 }
 
-template<size_type Idx, typename FsmT>
+template<SizeT Idx, typename FsmT>
 inline constexpr decltype(auto) Get(FsmT&& fsm) noexcept
 {
     return Get_impl<Idx>(std::forward<FsmT>(fsm));
@@ -76,22 +76,22 @@ inline constexpr decltype(auto) Get(FsmT&& fsm) noexcept
 
 /* get */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-template<typename State, size_type Idx> inline constexpr
+template<typename State, SizeT Idx> inline constexpr
 FsmState_t<Idx,State>& get_state_impl(FsmState<Idx,State>& state) noexcept
 {
     return state.get();
 }
-template<typename State, size_type Idx> inline constexpr
+template<typename State, SizeT Idx> inline constexpr
 FsmState_t<Idx,State> const& get_state_impl(FsmState<Idx,State> const& state) noexcept
 {
     return state.get();
 }
-template<typename State, size_type Idx> inline constexpr
+template<typename State, SizeT Idx> inline constexpr
 FsmState_t<Idx,State>&& get_state_impl(FsmState<Idx,State>&& state) noexcept
 {
     return std::move(state).get();
 }
-template<typename State, size_type Idx> inline constexpr
+template<typename State, SizeT Idx> inline constexpr
 FsmState_t<Idx,State> const&& get_state_impl(FsmState<Idx,State> const&& state) noexcept
 {
     return std::move(state).get();
