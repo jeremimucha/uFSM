@@ -84,6 +84,10 @@ struct propagateAction<State, true> {
 
 } // namespace detail
 
+// TODO: There's no real reason to pass FsmT to the transition-action - the fsm can easily be
+// captured in a lambda, or a function-object.
+// Consider passing the current and/or next-state instead?
+
 template <typename FsmT_, typename Event_, typename TTraits_,
           typename = detail::SelectTransitionActionSignature<TTraits_, FsmT_, Event_>>
 struct fsmAction {

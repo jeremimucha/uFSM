@@ -31,7 +31,7 @@ struct trySetInitialState<State, true> {
         );
         // An optimization - dispatch directly into the InitialState
         using fsm_t = std::decay_t<FsmT>;
-        constexpr auto InitialStateIndex = StateIndex<GetStateList<fsm_t>, fsm_t::InitialState>;
+        constexpr auto InitialStateIndex = StateIndex<GetStateList<fsm_t>, typename fsm_t::InitialState>;
         handle_dispatch_event(
             Get<InitialStateIndex>(std::forward<FsmT>(fsm)),
             std::forward<FsmT>(fsm),
