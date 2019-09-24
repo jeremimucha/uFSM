@@ -120,23 +120,6 @@ struct has_log_entry<FsmT, State,
 template<typename FsmT, typename State>
 constexpr inline auto has_log_entry_v{has_log_entry<FsmT,State>::value};
 
-// template <class, int N, int... Ns>
-// auto get_type_name(const char *ptr, index_sequence<Ns...>) {
-//   static const char str[] = {ptr[N + Ns]..., 0};
-//   return str;
-// }
-// }
-// template <class T>
-// const char *get_type_name() {
-// #if defined(COMPILING_WITH_MSVC)
-//   return detail::get_type_name<T, 34>(__FUNCSIG__, make_index_sequence<sizeof(__FUNCSIG__) - 34 - 8>{});
-// #elif defined(__clang__)
-//   return detail::get_type_name<T, 58>(__PRETTY_FUNCTION__, make_index_sequence<sizeof(__PRETTY_FUNCTION__) - 58 - 2>{});
-// #elif defined(__GNUC__)
-//   return detail::get_type_name<T, 63>(__PRETTY_FUNCTION__, make_index_sequence<sizeof(__PRETTY_FUNCTION__) - 63 - 2>{});
-// #endif
-// }
-
 template <class, int N, size_type... Ns>
 auto get_type_name(const char *ptr, IndexSequence<Ns...>) noexcept {
   static const char str[] = {ptr[N + Ns]..., 0};

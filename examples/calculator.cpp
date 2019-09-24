@@ -239,7 +239,6 @@ struct On {
             make_entry(from_state<Operand1>, event<e::CE>, next_state<Ready>),
             make_aentry(from_state<Operand1>, event<e::Op>, next_state<OpEntered>,
                 [](auto& fsm, e::Op op) noexcept {
-                    // update total
                     fsm.total_ = ufsm::get_state<Operand1>(fsm).eval();
                     fsm.op_ = op.key;
                 }),
