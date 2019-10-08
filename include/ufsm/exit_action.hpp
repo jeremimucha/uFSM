@@ -29,13 +29,20 @@ template<typename State, typename... Args>
 constexpr inline auto HasExit{HasExitT<State, void, Args...>::value};
 
 struct NoExitAction { };
+struct ExitActionNoArgs { };
 struct ExitActionFsm { };
 struct ExitActionFsmEvent { };
 
-// TODO: Implement exit action for different overloads
+template<typename State, typename = void_t<>>
+struct SelectExitActionT { using type = NoExitAction; };
+
+template<typename State>
+struct SelectExitActionT<State, void_t<state_exit_call<State>>> {
+    using type = ExitActionNoArgs;
+};
 
 template<typename State, typename FsmT, typename = void_t<>>
-struct SelectExitActionFsmT { using type = NoExitAction; };
+struct SelectExitActionFsmT : SelectExitActionT<State> { };
 
 template<typename State, typename FsmT>
 struct SelectExitActionFsmT<State, FsmT, void_t<state_exit_call<State, FsmT>>> {
@@ -67,6 +74,17 @@ struct fsmExit {
     constexpr inline void operator()(State&& state, FsmT&&, Event&& event) const noexcept
     {
         detail::tryExit<State>{}(std::forward<State>(state), std::forward<Event>(event));
+    }
+};
+
+template<typename State_, typename FsmT_, typename Event_>
+struct fsmExit<State_, FsmT_, Event_, detail::ExitActionNoArgs> {
+    template<typename State, typename FsmT, typename Event>
+    constexpr inline void operator()(State&& state, FsmT&& fsm, Event&& event) const noexcept
+    {
+        detail::tryExit<State>{}(std::forward<State>(state), std::forward<Event>(event));
+        logging::fsm_log_exit(fsm, detail::asBaseState(state));
+        std::forward<State>(state).exit();
     }
 };
 

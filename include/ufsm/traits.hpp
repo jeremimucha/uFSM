@@ -4,7 +4,6 @@
 #include <utility>
 #include "fsmfwd.hpp"
 
-
 namespace ufsm
 {
 

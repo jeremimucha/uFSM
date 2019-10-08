@@ -32,11 +32,20 @@ template<typename State, typename... Args>
 constexpr inline auto HasEntry{HasEntryT<State, void, Args...>::value};
 
 struct NoEntryAction { };
+struct EntryActionNoArgs { };
 struct EntryActionFsm { };
 struct EntryActionFsmEvent { };
 
+template<typename State, typename = void_t<>>
+struct SelectEntryActionT { using type = NoEntryAction; };
+
+template<typename State>
+struct SelectEntryActionT<State, void_t<state_entry_call<State>>> {
+    using type = EntryActionNoArgs;
+};
+
 template<typename State, typename FsmT, typename = void_t<>>
-struct SelectEntryActionFsmT { using type = NoEntryAction; };
+struct SelectEntryActionFsmT : SelectEntryActionT<State> { };
 
 template<typename State, typename FsmT>
 struct SelectEntryActionFsmT<State, FsmT, void_t<state_entry_call<State, FsmT>>> {
@@ -76,6 +85,20 @@ struct fsmEntry {
         detail::tryDispatch<State>{}(std::forward<State>(state), std::forward<Event>(event));
     }
 };
+
+template<typename State_, typename FsmT_, typename Event_>
+struct fsmEntry<State_, FsmT_, Event_, detail::EntryActionNoArgs> {
+    template<typename State, typename FsmT, typename Event>
+    constexpr inline void operator()(State&& state, FsmT&& fsm, Event&& event) const noexcept
+    {
+        logging::fsm_log_entry(fsm, detail::asBaseState(state));
+        // TODO: How to reliably keep both std::forwards here?
+        std::forward<State>(state).entry();
+        detail::propagateEntry<std::decay_t<State>>{}(std::forward<State>(state), std::forward<Event>(event));
+        // detail::tryDispatch<State>{}(std::forward<State>(state), std::forward<Event>(event));
+    }
+};
+
 
 template<typename State_, typename FsmT_, typename Event_>
 struct fsmEntry<State_, FsmT_, Event_, detail::EntryActionFsm> {

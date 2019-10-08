@@ -8,7 +8,6 @@ namespace e
 struct Op {
     char key;
 };
-struct OpMinus { };
 struct CE { };
 struct C { };
 struct Digit_0 { };
@@ -47,32 +46,39 @@ struct Int {
     template<typename SM> constexpr void exit(SM const&) const noexcept { }
 };
 
+// ------------------------------------------------------------------------------------------------
+// An alternative to achieving hierarhical behavior would be to implement the common behavior in
+// a base class and then the state-specific behavior in subclasses (substates). This however
+// would require the Base class to be stateless, implementing only some logic. CRTP could be used.
+// template<typename Base>
+// struct ZeroBase : public Base {
+//     static inline trace_logger<ZeroBase> logger_{};
+//     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
+//     template<typename SM> constexpr void entry(SM const& sm) const noexcept { Base::entry(sm); }
+//     template<typename SM> constexpr void exit(SM const& sm) const noexcept { Base::exit(sm); }
+// };
+
+// template<typename Base>
+// struct IntBase : Base {
+//     static inline trace_logger<IntBase> logger_{};
+//     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
+
+//     template<typename SM> constexpr void entry(SM const& sm) const noexcept { Base::entry(sm); }
+//     template<typename SM> constexpr void exit(SM const& sm) const noexcept { Base::exit(sm); }
+// };
+
+// struct Oper {
+//     static inline trace_logger<Oper> logger_{};
+//     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
+//     template<typename SM> constexpr void entry(SM const&) const noexcept { }
+//     template<typename SM> constexpr void exit(SM const&) const noexcept { }
+// };
+// using Zero_ = ZeroBase<Oper>;
+// using Int_ = IntBase<Oper>;
+// ------------------------------------------------------------------------------------------------
+
 template<std::size_t I> struct Operand;
-template<typename Base>
-struct ZeroBase : public Base {
-    static inline trace_logger<ZeroBase> logger_{};
-    static constexpr inline decltype(auto) logger() noexcept { return logger_; }
-    template<typename SM> constexpr void entry(SM const& sm) const noexcept { Base::entry(sm); }
-    template<typename SM> constexpr void exit(SM const& sm) const noexcept { Base::exit(sm); }
-};
 
-template<typename Base>
-struct IntBase : Base {
-    static inline trace_logger<IntBase> logger_{};
-    static constexpr inline decltype(auto) logger() noexcept { return logger_; }
-
-    template<typename SM> constexpr void entry(SM const& sm) const noexcept { Base::entry(sm); }
-    template<typename SM> constexpr void exit(SM const& sm) const noexcept { Base::exit(sm); }
-};
-
-struct Oper {
-    static inline trace_logger<Oper> logger_{};
-    static constexpr inline decltype(auto) logger() noexcept { return logger_; }
-    template<typename SM> constexpr void entry(SM const&) const noexcept { }
-    template<typename SM> constexpr void exit(SM const&) const noexcept { }
-};
-using Zero_ = ZeroBase<Oper>;
-using Int_ = IntBase<Oper>;
 struct Fraction {
     template<typename SM> constexpr void entry(SM const&) const noexcept { }
     template<typename SM> constexpr void exit(SM const&) const noexcept { }
@@ -86,7 +92,6 @@ using Negated2 = Negated<2>;
 
 struct OpEntered { };
 struct Error { };
-
 struct Init { };
 
 struct Ready
@@ -127,7 +132,7 @@ struct Operand {
     static inline trace_logger<Operand> logger_{};
     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
 
-    constexpr void entry(On&) noexcept
+    constexpr void entry() noexcept // no-argument entry-action, the same is valid for exit
     {
         integral_ = 0;
         fractional_ = 0;
