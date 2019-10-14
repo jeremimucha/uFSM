@@ -1,45 +1,22 @@
-cmake_minimum_required( VERSION 3.1 )
+cmake_minimum_required( VERSION 3.13 )
 
-set( Project uFSM )
-project( ${Project} )
+project( uFSM )
 
-
-###############################################################################
-# Prepare external dependencies
-###############################################################################
 add_subdirectory( external/google-test )
+include(${CMAKE_SOURCE_DIR}/cmake/clang_tidy.cmake)
 
-
-# Find any external libraries via find_backage
-# see cmake --help-module-list and cmake --help-module ModuleName
-# for details on a specific module
-# If using boost
-# find_package( Boost 1.60.0
-#   REQUIRED COMPONENTS
-#   filesystem system iostreams
-#   )
-#
-# if( Boost_FOUND )
-#   include_directories( ${Boost_INCLUDE_DIRS} )
-# else()
-#   message( FATAL_ERROR "Cannon find Boost" )
-# endif()
-
-
-
-###############################################################################
-# Configure build
-###############################################################################
 # Set required C++ standard
 set( CMAKE_CXX_STANDARD 17 )
 set( CMAKE_CXX_STANDARD_REQUIRED TRUE )
+
+ClangTidyTarget(PATHS "C:/msys64/mingw64/share/clang")
 # Set build type
 if( NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message("Setting build type to 'Debug' as none was specified.")
   set( CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-# Export compile_commands.json for use with cppcheck
+# Export compile_commands.json
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
 option(ENABLE_ASAN "Enable memory sanitizers" FALSE)
@@ -170,17 +147,6 @@ if(CPP_USE_CPPCHECK)
       message(STATUS ${Cppcheck})
   endif()
 endif()
-
-option(CPP_USE_CLANGTIDY "Enable clang-tidy build step" OFF)
-if(CPP_USE_CLANGTIDY)
-  find_program(Clangtidy NAMES clang-tidy)
-  if (Clangtidy)
-      list(
-          APPEND Clangtidy
-      )
-      message(STATUS ${Clangtidy})
-  endif()
-endif()
 ###############################################################################
 # Build target library
 ###############################################################################
@@ -189,36 +155,25 @@ file( GLOB LibHeaders
       "${PROJECT_SOURCE_DIR}/include/ufsm/*.hpp"
     )
 
-add_library( ${PROJECT_NAME}
-    INTERFACE
-    # ${LibHeaders}
-    )
+add_library(${PROJECT_NAME} INTERFACE)
 target_sources( ${PROJECT_NAME}
     INTERFACE
-    ${LibHeaders}
+      ${LibHeaders}
     )
-add_library( Lib::${PROJECT_NAME}
-    ALIAS ${PROJECT_NAME}
-    )
+add_library(Lib::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_include_directories( ${PROJECT_NAME}
     INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/ufsm>
     $<INSTALL_INTERFACE:include>
-    # PRIVATE
-    # $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}>
-    # $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
     )
 target_compile_options( ${PROJECT_NAME}
     INTERFACE
     # -fconcepts
     # -lstdc++fs
     )
-# target_compile_definitions( ${PROJECT_NAME}
-#     INTERFACE
-#     )
 target_link_libraries( ${PROJECT_NAME}
     INTERFACE
-    Project_config
+      Project_config
     )
 
 file( GLOB ExamplesSrc
@@ -237,11 +192,6 @@ foreach(Example ${ExamplesSrc})
         ${ExampleName} PRIVATE
         FSM_DEBUG_LOG
         )
-    # set_target_properties( ${ExampleName}
-    #     PROPERTIES
-    #     CXX_CPPCHECK $<$<BOOL:CPP_USE_CPPCHECK>:${Cppcheck}>
-    #     CXX_CLANG_TIDY $<$<BOOL:CPP_USE_CLANGTIDY>:${Clangtidy}>
-    #     )
     if(CPP_USE_CPPCHECK)
     set_target_properties( ${ExampleName}
         PROPERTIES

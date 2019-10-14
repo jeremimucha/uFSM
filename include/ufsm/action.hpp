@@ -28,8 +28,6 @@ enum class NoTransitionAction { };
 enum class TransitionActionNoArgs { };
 enum class TransitionActionEvent { };
 enum class TransitionActionFsmEvent { };
-// Support actions taking (state, event) arguments instead of (fsm, event)?
-// struct TransitionActionStateEvent { };
 
 template<typename TTraits, typename = void_t<>>
 struct SelectTransitionActionT { using type = NoTransitionAction; };
@@ -59,16 +57,6 @@ struct SelectTransitionActionFsmEventT<TTraits, FsmT, Event,
 {
     using type = TransitionActionFsmEvent;
 };
-
-// template<typename TTraits, typename State, typename Event, typename = void_t<>>
-// struct SelectTransitionActionStateEventT : SelectTransitionActionEventT<TTraits, Event> { };
-
-// template<typename TTraits, typename State, typename Event>
-// struct SelectTransitionActionStateEventT<TTraits, State, Event,
-//     void_t<transition_action_call<TTraits, State, Event>>>
-// {
-//     using type = TransitionActionStateEvent;
-// };
 
 
 template<typename TTraits, typename FsmT, typename Event>
@@ -107,15 +95,11 @@ struct propagateAction<State, true> {
 
 } // namespace detail
 
-// TODO: There's no real reason to pass FsmT to the transition-action - the fsm can easily be
-// captured in a lambda, or a function-object.
-// Consider passing the current and/or next-state instead?
-
-template <typename FsmT_, typename Event_, typename TTraits_,
+template <typename TTraits_, typename FsmT_, typename Event_,
           typename = detail::SelectTransitionActionSignature<TTraits_, FsmT_, Event_>>
 struct fsmAction {
-    template <typename FsmT, typename Event, typename TTraits, typename State>
-    constexpr inline void operator()(FsmT&&, Event&& event, TTraits&&, State&& state) const noexcept
+    template <typename TTraits, typename FsmT, typename State, typename Event>
+    constexpr inline void operator()(TTraits&&, FsmT&&, State&& state, Event&& event) const noexcept
     {
         /* nop */
         detail::propagateAction<std::decay_t<State>>{}(
@@ -125,10 +109,10 @@ struct fsmAction {
     }
 };
 
-template <typename FsmT_, typename Event_, typename TTraits_>
-struct fsmAction<FsmT_, Event_, TTraits_, detail::TransitionActionNoArgs> {
-    template <typename FsmT, typename Event, typename TTraits, typename State>
-    constexpr inline void operator()(FsmT&& fsm, Event&& event, TTraits&& ttraits, State&& state) const noexcept
+template <typename TTraits_, typename FsmT_, typename Event_>
+struct fsmAction<TTraits_, FsmT_, Event_, detail::TransitionActionNoArgs> {
+    template <typename TTraits, typename FsmT, typename State, typename Event>
+    constexpr inline void operator()(TTraits&& ttraits, FsmT&& fsm, State&& state, Event&& event) const noexcept
     {
         logging::fsm_log_action(fsm, ttraits.action, event);
         std::forward<TTraits>(ttraits).action();
@@ -139,10 +123,10 @@ struct fsmAction<FsmT_, Event_, TTraits_, detail::TransitionActionNoArgs> {
     }
 };
 
-template <typename FsmT_, typename Event_, typename TTraits_>
-struct fsmAction<FsmT_, Event_, TTraits_, detail::TransitionActionEvent> {
-    template <typename FsmT, typename Event, typename TTraits, typename State>
-    constexpr inline void operator()(FsmT&& fsm, Event&& event, TTraits&& ttraits, State&& state) const noexcept
+template <typename TTraits_, typename FsmT_, typename Event_>
+struct fsmAction<TTraits_, FsmT_, Event_, detail::TransitionActionEvent> {
+    template <typename TTraits, typename FsmT, typename State, typename Event>
+    constexpr inline void operator()(TTraits&& ttraits, FsmT&& fsm, State&& state, Event&& event) const noexcept
     {
         logging::fsm_log_action(fsm, ttraits.action, event);
         std::forward<TTraits>(ttraits).action(std::forward<Event>(event));
@@ -153,11 +137,14 @@ struct fsmAction<FsmT_, Event_, TTraits_, detail::TransitionActionEvent> {
     }
 };
 
-// Not that useful - Fsm can be easily captured in a lambda
-template <typename FsmT_, typename Event_, typename TTraits_>
-struct fsmAction<FsmT_, Event_, TTraits_, detail::TransitionActionFsmEvent> {
-    template <typename FsmT, typename Event, typename TTraits, typename State>
-    constexpr inline void operator()(FsmT&& fsm, Event&& event, TTraits&& ttraits, State&& state) const noexcept
+// This is necessary to allow actions that access states of sub-fsms.
+// Simply capturing `this` would require casting it to Fsm<decltype(*this)>
+// which is impossible because instantiating (specializing) Fsm evaluates the transiiton_table(),
+// which in turn would be recursive
+template <typename TTraits_, typename FsmT_, typename Event_>
+struct fsmAction<TTraits_, FsmT_, Event_, detail::TransitionActionFsmEvent> {
+    template <typename TTraits, typename FsmT, typename State, typename Event>
+    constexpr inline void operator()(TTraits&& ttraits, FsmT&& fsm, State&& state, Event&& event) const noexcept
     {
         logging::fsm_log_action(fsm, ttraits.action, event);
         std::forward<TTraits>(ttraits).action(std::forward<FsmT>(fsm), std::forward<Event>(event));
@@ -168,29 +155,15 @@ struct fsmAction<FsmT_, Event_, TTraits_, detail::TransitionActionFsmEvent> {
     }
 };
 
-// Support action(State&, Event&) instead of action(Fsm&, Event&)?
-// template <typename State_, typename Event_, typename TTraits_>
-// struct fsmAction<State_, Event_, TTraits_, detail::TransitionActionStateEvent> {
-//     template <typename FsmT, typename Event, typename TTraits, typename State>
-//     constexpr inline void operator()(FsmT&& fsm, Event&& event, TTraits&& ttraits, State&& state) const noexcept
-//     {
-//         logging::fsm_log_action(fsm, ttraits.action, event);
-//         std::forward<TTraits>(ttraits).action(std::forward<State>(state), std::forward<Event>(event));
-//         detail::propagateAction<std::decay_t<State>>{}(
-//             std::forward<State>(state),
-//             std::forward<Event>(event)
-//         );
-//     }
-// };
-
-template <typename FsmT, typename Event, typename TTraits>
-constexpr inline void fsm_action(FsmT&& fsm, Event&& event, TTraits&& ttraits) noexcept
+template <typename TTraits, typename FsmT, typename State, typename Event>
+constexpr inline void fsm_action(TTraits&& ttraits, FsmT&& fsm, State&& state, Event&& event) noexcept
 {
     using fsm_t = std::decay_t<FsmT>;
     using event_t = std::decay_t<Event>;
     using ttraits_t = std::decay_t<TTraits>;
-    fsmAction<fsm_t, event_t, ttraits_t>{}(
-        std::forward<FsmT>(fsm), std::forward<Event>(event), std::forward<TTraits>(ttraits)
+    fsmAction<ttraits_t, fsm_t, event_t>{}(
+        std::forward<TTraits>(ttraits), std::forward<FsmT>(fsm),
+        std::forward<State>(state), std::forward<Event>(event)
     );
 }
 
@@ -213,10 +186,11 @@ template<SizeT I, SizeT... Is> struct executeAction<IndexSequence<I, Is...>> {
         decltype(auto) traits{std::get<I>(traits_tuple)};
         if (fsmGuard<FsmT, traits_t, Event>(fsm, traits, event))
         {
-            fsmAction<FsmT, Event, traits_t>(
+            fsmAction<traits_t, FsmT, Event>(
+                std::forward<decltype(traits)>(traits),
                 std::forward<FsmT>(fsm),
-                std::forward<Event>(event),
-                std::forward<decltype(traits)>(traits)
+                std::forward<State>(state),
+                std::forward<Event>(event)
             );
             // return;
         }

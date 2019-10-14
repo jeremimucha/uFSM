@@ -54,9 +54,7 @@ constexpr inline void handle_dispatch_event(State&& state, FsmT&& fsm, Event&& e
     using event_t = std::decay_t<Event>;
     detail::tryDispatch<State>{}(state, event);
     // down from here - cast to the actual State type (if state is Fsm)
-    // auto&& state = detail::asBaseState(state_fsm);
-    using detail::asBaseState;
-    logging::fsm_log_event(fsm, asBaseState(state), event);
+    logging::fsm_log_event(fsm, detail::asBaseState(state), event);
     if constexpr (detail::HasHandleEvent<state_t, FsmT, Event>) {
         state.handle_event(fsm, std::forward<Event>(event));
     }

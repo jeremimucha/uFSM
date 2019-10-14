@@ -52,8 +52,8 @@ constexpr decltype(auto) asBaseState(FsmT&& fsm) noexcept
     return static_cast<BaseFsmState<FsmT>>(std::forward<FsmT>(fsm));
 }
 
-} // namespace back
 } // namespace detail
+} // namespace back
 
 } // namespace ufsm
 

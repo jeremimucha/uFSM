@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.1 )
 
-project( "test_${Project}" )
+project( "test_${CMAKE_PROJECT_NAME}" )
 
 
 ###############################################################################
@@ -32,7 +32,7 @@ target_sources( ${PROJECT_NAME}
 #     )
 target_link_libraries( ${PROJECT_NAME}
     Project_config
-    Lib::${Project}
+    Lib::${CMAKE_PROJECT_NAME}
     GTest::GTest
     GTest::Main
     )

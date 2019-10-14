@@ -103,7 +103,7 @@ struct Ready
     template<typename SM> constexpr void exit(SM const&) const noexcept { }
 
     using InitialState = Begin;
-    // using EntryPolicy = typename ufsm::InitialStateEntryPolicy;
+    // using EntryPolicy = ufsm::InitialStateEntryPolicy;
     constexpr inline auto transition_table() const noexcept {
         using namespace ufsm;
         return make_transition_table(
@@ -162,7 +162,6 @@ struct Operand {
             increment(s.integral_);
         };
         auto const add_digit = [](Operand& s, e::Digit_1_9 e) noexcept {
-            std::cerr << "doing the thing\n";
             increment(s.integral_);
             s.integral_ += e.value;
         };
@@ -228,7 +227,9 @@ struct On {
     {
         using namespace ufsm;
         auto const guard_op_minus{ [](e::Op evt) noexcept { return evt.key == '-'; } };
-        auto const action_set_negative{ [](auto& fsm, e::Op) noexcept { fsm.negative = true; } };
+        auto const guard_division_by_zero{ [](auto const& fsm, e::Equals) noexcept {
+                return fsm.op_ == '/' && ufsm::get_state<Operand2>(fsm).eval() == 0;
+            }};
         auto const action_set_op{ [](auto& fsm, e::Op op) noexcept {fsm.op_ = op.key;} };
 
         return make_transition_table(
@@ -255,12 +256,8 @@ struct On {
                     fsm.op_ = op.key;
             }),
             make_entry(from_state<Operand2>, event<e::Equals>, next_state<Ready>,
-                [](auto const& fsm, e::Equals) noexcept {
-                    std::cerr << "### Checking error condition ###\n";
-                    return fsm.op_ == '/' && ufsm::get_state<Operand2>(fsm).eval() == 0;
-                },
+                guard_division_by_zero,
                 [](auto& fsm, e::Equals) noexcept {
-                    std::cerr << "### Taking error branch ###\n";
                     fsm.total_ = 0.0;
                     fsm.op_ = '!';
                 }),

@@ -60,9 +60,9 @@ struct stateTransitionImpl {
     operator()(FsmT&& fsm, TTraits&& traits, State&& state, Event&& event) const noexcept
     {
         if (fsmGuard<FsmT, TTraits, Event>{}(fsm, traits, event)) {
-            fsmAction<FsmT, Event, TTraits>{}(
-                std::forward<FsmT>(fsm), std::forward<Event>(event),
-                std::forward<TTraits>(traits), std::forward<State>(state)
+            fsmAction<TTraits, FsmT, Event>{}(
+                std::forward<TTraits>(traits), std::forward<FsmT>(fsm),
+                std::forward<State>(state), std::forward<Event>(event)
             );
             return true;
         }
@@ -80,16 +80,13 @@ struct stateTransitionImpl<FsmT_, TTraits_, Event_, true> {
     operator()(FsmT&& fsm, TTraits&& ttraits, State&& state, Event&& event) const noexcept
     {
         if (fsmGuard<FsmT, TTraits, Event>{}(fsm, ttraits, event)) {
-            // fsmExit<FsmT, State>{}(fsm, state);
             fsmExit<State, FsmT, Event>{}(state, fsm, event);
-            fsmAction<FsmT, Event, TTraits>{}(fsm, event, ttraits, state);
+            fsmAction<TTraits, FsmT, Event>{}(ttraits, fsm, state, event);
             using ttraits_t = std::decay_t<TTraits>;
             using fsm_statelist = GetStateList<std::decay_t<FsmT>>;
             constexpr auto next_state_idx = StateIndex<fsm_statelist, NextState<ttraits_t>>;
             fsm.state(next_state_idx);
             auto&& next_state = Get<next_state_idx>(fsm);
-            // using next_state_t = std::decay_t<decltype(next_state)>;
-            // enterSubstate<next_state_t, ttraits_t>{}(next_state, event);
             logging::fsm_log_state_change(
                 fsm, detail::asBaseState(state), detail::asBaseState(next_state)
             );
