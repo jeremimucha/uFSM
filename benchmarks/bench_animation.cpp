@@ -1,5 +1,5 @@
 #include <iostream>
-#include "fsm.hpp"
+#include <ufsm/fsm.hpp>
 #include "stopwatch/stopwatch.h"
 
 

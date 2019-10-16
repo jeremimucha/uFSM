@@ -1,3 +1,4 @@
+include(GNUInstallDirs)
 macro(DeclareInstallDirs)
     set(project_install_include_dir ${CMAKE_INSTALL_INCLUDEDIR})
     set(project_install_library_dir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME})

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cmath>
-#include "fsm.hpp"
+#include <ufsm/fsm.hpp>
 #include "trace_logger.hpp"
 
 namespace e
