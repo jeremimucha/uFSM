@@ -13,3 +13,12 @@ target_link_libraries(bench_animation
         uFSM::uFSM
         uFSM::Flags
     )
+
+if (${OPT_INSTALL_BENCHMARKS})
+    install(
+        TARGETS
+            bench_animation
+        EXPORT ${project_export_targets}
+        RUNTIME DESTINATION ${project_install_runtime_dir}/benchmarks
+    )
+endif()

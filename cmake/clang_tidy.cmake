@@ -21,6 +21,7 @@ function(ClangTidyTarget)
     endif()
     set(RUN_CLANG_TIDY_COMMAND
         ${RUN_CLANG_TIDY}
+            -j 4
             -extra-arg=-std=c++${CMAKE_CXX_STANDARD}
             # \"-header-filter=${CMAKE_SOURCE_DIR}/\(include|src|tests|examples|benchmarks\).*\"
             -p ${CMAKE_BINARY_DIR}

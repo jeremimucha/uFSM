@@ -13,6 +13,9 @@ target_link_libraries(animation
         uFSM::uFSM
         uFSM::Flags
     )
+target_compile_definitions(animation PRIVATE
+    $<$<CONFIG:Debug>:FSM_DEBUG_LOG>
+)
 
 add_executable(composite)
 target_sources(composite
@@ -27,6 +30,9 @@ target_link_libraries(composite
         uFSM::uFSM
         uFSM::Flags
     )
+target_compile_definitions(composite PRIVATE
+    $<$<CONFIG:Debug>:FSM_DEBUG_LOG>
+)
 
 add_executable(calculator)
 target_sources(calculator
@@ -41,8 +47,16 @@ target_link_libraries(calculator
         uFSM::uFSM
         uFSM::Flags
     )
-
-
+target_compile_definitions(calculator PRIVATE
+    $<$<CONFIG:Debug>:FSM_DEBUG_LOG>
+)
 if (${OPT_INSTALL_EXAMPLES})
-    # install ...
+    install(
+        TARGETS
+            animation
+            composite
+            calculator
+        EXPORT ${project_export_targets}
+        RUNTIME DESTINATION ${project_install_runtime_dir}/examples
+    )
 endif()
