@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(uFSM VERSION 0.1.0)
 
+include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/clang_tidy.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/config.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/release.cmake)
@@ -26,12 +27,13 @@ option(${OPT_INSTALL_BENCHMARKS} "Install benchmark binaries" ON)
 option(FSM_DEBUG_LOG "Enable debug logs" OFF)
 
 add_subdirectory(include)
-# target_compile_definitions(${CMAKE_PROJECT_NAME} INTERFACE
-#     $<$<CONFIG:Debug>:FSM_DEBUG_LOG>
-# )
 add_library(${CMAKE_PROJECT_NAME} INTERFACE)
 add_library(${CMAKE_PROJECT_NAME}::${CMAKE_PROJECT_NAME} ALIAS ${CMAKE_PROJECT_NAME})
-target_link_libraries(${CMAKE_PROJECT_NAME} INTERFACE ${CMAKE_PROJECT_NAME}::include)
+target_link_libraries(${CMAKE_PROJECT_NAME}
+    INTERFACE
+        ${CMAKE_PROJECT_NAME}::include
+)
+
 add_subdirectory(examples)
 add_subdirectory(benchmarks)
 
@@ -54,4 +56,3 @@ install(
 )
 
 InstallProject()
-
