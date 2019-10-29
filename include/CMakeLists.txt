@@ -29,11 +29,6 @@ target_include_directories(${PROJECT_NAME}
 install(
     TARGETS ${PROJECT_NAME}
     EXPORT ${project_export_targets}
-    PUBLIC_HEADER DESTINATION ${project_install_include_dir}
-    # LIBRARY DESTINATION ${project_install_library_dir}
-    # ARCHIVE DESTINATION ${project_install_library_dir}
-    # INCLUDES DESTINATION ${project_install_include_dir}
-    # RUNTIME DESTINATION ${project_install_runtime_dir}
 )
 install(
     DIRECTORY ufsm

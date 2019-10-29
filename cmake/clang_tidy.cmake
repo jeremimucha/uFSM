@@ -10,7 +10,13 @@ function(ClangTidyTarget)
     endforeach()
 
     find_program(RUN_CLANG_TIDY
-        NAMES run-clang-tidy.py
+        NAMES
+            run-clang-tidy.py
+            run-clang-tidy-10.py
+            run-clang-tidy-9.py
+            run-clang-tidy-8.py
+            run-clang-tidy-7.py
+            run-clang-tidy-6.py
         PATHS ${arg_PATHS}
         PATH_SUFFIXES ${arg_PATH_SUFFIXES}
         )
