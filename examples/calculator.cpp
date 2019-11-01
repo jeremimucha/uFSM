@@ -108,8 +108,8 @@ struct Ready
         using namespace ufsm;
         return make_transition_table(
             make_entry(from_state<Begin>, event<e::Equals>, next_state<Result>),
-            make_entry(from_state<Result>, event<AnyEvent_t>, next_state<Begin>),
-            make_entry(from_state<Error>, event<AnyEvent_t>, next_state<Begin>)
+            make_entry(from_state<Result>, event<AnyEventT>, next_state<Begin>),
+            make_entry(from_state<Error>, event<AnyEventT>, next_state<Begin>)
         );
     }
 };
@@ -228,7 +228,7 @@ struct On {
         using namespace ufsm;
         auto const guard_op_minus{ [](e::Op evt) noexcept { return evt.key == '-'; } };
         auto const guard_division_by_zero{ [](auto const& fsm, e::Equals) noexcept {
-                return fsm.op_ == '/' && ufsm::get_state<Operand2>(fsm).eval() == 0;
+                return fsm.op_ == '/' && ufsm::get<Operand2>(fsm).eval() == 0;
             }};
         auto const action_set_op{ [](auto& fsm, e::Op op) noexcept {fsm.op_ = op.key;} };
 
@@ -240,7 +240,7 @@ struct On {
             make_entry(from_state<Operand1>, event<e::CE>, next_state<Ready>),
             make_aentry(from_state<Operand1>, event<e::Op>, next_state<OpEntered>,
                 [](auto& fsm, e::Op op) noexcept {
-                    fsm.total_ = ufsm::get_state<Operand1>(fsm).eval();
+                    fsm.total_ = ufsm::get<Operand1>(fsm).eval();
                     fsm.op_ = op.key;
                 }),
             make_entry(from_state<OpEntered>, event<e::Digit_0>, next_state<Operand2>),
@@ -251,7 +251,7 @@ struct On {
             make_aentry(from_state<Operand2>, event<e::Op>, next_state<OpEntered>,
                 [](auto& fsm, e::Op op) noexcept {
                     // calculate and display the current total
-                    auto const rhs{ufsm::get_state<Operand2>(fsm).eval()};
+                    auto const rhs{ufsm::get<Operand2>(fsm).eval()};
                     fsm.update(rhs);
                     fsm.op_ = op.key;
             }),
@@ -264,8 +264,8 @@ struct On {
             make_aentry(from_state<Operand2>, event<e::Equals>, next_state<Ready>,
                 [](auto& fsm, e::Equals) noexcept {
                     // calculate the current total
-                    auto const lhs{ufsm::get_state<Operand1>(fsm).eval()};
-                    auto const rhs{ufsm::get_state<Operand2>(fsm).eval()};
+                    auto const lhs{ufsm::get<Operand1>(fsm).eval()};
+                    auto const rhs{ufsm::get<Operand2>(fsm).eval()};
                     fsm.update(rhs);
                     std::cout << "Operand1 = " << lhs << "\n";
                     std::cout << "Operand2 = " << rhs << "\n";
@@ -290,7 +290,7 @@ struct Calculator {
         return make_transition_table(
             make_entry(from_state<On>, event<e::C>, next_state<On>),
             make_entry(from_state<On>, event<e::Off>, next_state<Off>),
-            make_entry(from_state<Off>, event<ufsm::AnyEvent_t>, next_state<Off>)
+            make_entry(from_state<Off>, event<ufsm::AnyEventT>, next_state<Off>)
         );
     }
 };

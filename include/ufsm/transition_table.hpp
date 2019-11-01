@@ -183,7 +183,7 @@ struct GetTtraitsListImplT<List<Es...>, State, Event, Entry, Entries...>
 };
 
 template<typename State, typename Event, typename... Entries>
-struct GetTtraitsListT : GetTtraitsListImplT<typelist<>, State, Event, Entries...> { };
+struct GetTtraitsListT : GetTtraitsListImplT<Typelist<>, State, Event, Entries...> { };
 
 template<typename State, typename Event, typename... Entries>
 using GetTtraitsList = typename GetTtraitsListT<State, Event, Entries...>::type;
@@ -342,7 +342,7 @@ struct build_state_list<Statelist<Ss...>>
 template<typename TTraits> struct fsm_state_list;
 template<typename... Ts>
 struct fsm_state_list<TransitionTraits<Ts...>>
-    : build_state_list<typelist<>, typename Ts::state_type...>
+    : build_state_list<Typelist<>, typename Ts::state_type...>
 {
 };
 

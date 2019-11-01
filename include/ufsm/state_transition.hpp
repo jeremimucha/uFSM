@@ -10,7 +10,10 @@
 #include "entry_action.hpp"
 #include "exit_action.hpp"
 #include "logging.hpp"
-
+#include "any_event.hpp"
+#include "traits.hpp"
+#include "state_index.hpp"
+#include "next_state.hpp"
 
 namespace ufsm
 {
@@ -34,7 +37,7 @@ struct SelectTransitionCategoryAnyT { using type = NoTransitionTraitsCategory; }
 
 template<typename FsmT, typename State>
 struct SelectTransitionCategoryAnyT<FsmT, State,
-    void_t<get_transition_traits_call<FsmT, State, ufsm::AnyEvent_t>>> {
+    void_t<get_transition_traits_call<FsmT, State, ufsm::AnyEventT>>> {
     using type = AnyEventTransitionCategory;
 };
 
@@ -86,7 +89,7 @@ struct stateTransitionImpl<FsmT_, TTraits_, Event_, true> {
             using fsm_statelist = GetStateList<std::decay_t<FsmT>>;
             constexpr auto next_state_idx = StateIndex<fsm_statelist, NextState<ttraits_t>>;
             fsm.state(next_state_idx);
-            auto&& next_state = Get<next_state_idx>(fsm);
+            auto&& next_state = get<next_state_idx>(fsm);
             logging::fsm_log_state_change(
                 fsm, detail::asBaseState(state), detail::asBaseState(next_state)
             );
@@ -156,7 +159,7 @@ struct stateTransition<Event_, FsmT_, State_, detail::AnyEventTransitionCategory
     constexpr inline void operator()(FsmT&& fsm, State&& state, Event&& event) const noexcept
     {
         using state_t = detail::BaseFsmState<std::decay_t<State>>;
-        auto&& ttraitstuple = getTransitionTraits<state_t, ufsm::AnyEvent_t>(fsm.transition_table());
+        auto&& ttraitstuple = getTransitionTraits<state_t, ufsm::AnyEventT>(fsm.transition_table());
         using Indices = MakeIndexSequence<std::tuple_size_v<std::decay_t<decltype(ttraitstuple)>>>;
         applyStateTransition<Indices>{}(
             std::forward<decltype(ttraitstuple)>(ttraitstuple),

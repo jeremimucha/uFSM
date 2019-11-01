@@ -153,7 +153,7 @@ struct enterCurrentState<IndexSequence<I, Is...>> {
     constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept {
         if (I == fsm.state()) {
             fsmEntry<StateAt<I, FsmT>, FsmT, Event>{}(
-                Get<I>(std::forward<FsmT>(fsm)),
+                get<I>(std::forward<FsmT>(fsm)),
                 std::forward<FsmT>(fsm),
                 std::forward<Event>(event)
             );
@@ -161,7 +161,7 @@ struct enterCurrentState<IndexSequence<I, Is...>> {
             // calling tryDispatch - which would require iterating over states, searching for
             // the active one, again at runtime.
             handle_dispatch_event(
-                Get<I>(std::forward<FsmT>(fsm)),
+                get<I>(std::forward<FsmT>(fsm)),
                 std::forward<FsmT>(fsm),
                 std::forward<Event>(event)
             );
@@ -184,7 +184,7 @@ template<typename State>
 struct tryEnter<State, true> {
     template<typename FsmT, typename Event>
     constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept {
-        enterCurrentState<typename std::decay_t<FsmT>::Indices>{}(
+        enterCurrentState<GetIndices<FsmT>>{}(
             std::forward<FsmT>(fsm), std::forward<Event>(event)
         );
     }

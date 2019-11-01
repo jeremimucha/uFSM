@@ -1,11 +1,12 @@
 #pragma once
 
+#include <type_traits>
+#include <utility>
+
 #include "logging.hpp"
 #include "traits.hpp"
 #include "transition_guard.hpp"
 #include "transition_table.hpp"
-#include <type_traits>
-#include <utility>
 
 namespace ufsm {
 namespace back {
@@ -87,7 +88,7 @@ struct propagateAction<State, true> {
     template<typename FsmT, typename Event>
     constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept
     {
-        propagateActionImpl<typename std::decay_t<FsmT>::Indices>{}(
+        propagateActionImpl<GetIndices<FsmT>>{}(
             std::forward<FsmT>(fsm), std::forward<Event>(event)
         );
     }
@@ -216,7 +217,7 @@ template<SizeT I, SizeT... Is> struct propagateActionImpl<IndexSequence<I, Is...
             decltype(auto) traits_tuple{
                 getTransitionTraits<state_t, event_t>(fsm.transition_table())
             };
-            decltype(auto) state{Get<I>(fsm)};
+            decltype(auto) state{get<I>(fsm)};
             using Indices = MakeIndexSequence<
                 std::tuple_size_v<std::decay_t<decltype(traits_tuple)>>>;
             executeAction<Indices>{}(

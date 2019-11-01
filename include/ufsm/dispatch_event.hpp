@@ -81,7 +81,7 @@ template<SizeT I, SizeT... Is> struct dispatchEvent<IndexSequence<I, Is...>> {
     {
         if (I == fsm.state()) {
             handle_dispatch_event(
-                Get<I>(std::forward<FsmT>(fsm)),
+                get<I>(std::forward<FsmT>(fsm)),
                 std::forward<FsmT>(fsm),
                 std::forward<Event>(event)
             );

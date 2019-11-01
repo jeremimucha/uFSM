@@ -4,6 +4,7 @@ add_library(${CMAKE_PROJECT_NAME}::include ALIAS ${PROJECT_NAME})
 # target_sources(${PROJECT_NAME}
 #     INTERFACE
         # action.hpp
+        # any_event.hpp
         # dispatch_event.hpp
         # entry_action.hpp
         # entry_policy.hpp
@@ -12,7 +13,11 @@ add_library(${CMAKE_PROJECT_NAME}::include ALIAS ${PROJECT_NAME})
         # fsm.hpp
         # fsmfwd.hpp
         # get.hpp
+        # initial_state.hpp
         # logging.hpp
+        # next_state.hpp
+        # state_index.hpp
+        # state_traits.hpp
         # state_transition.hpp
         # traits.hpp
         # transition_guard.hpp

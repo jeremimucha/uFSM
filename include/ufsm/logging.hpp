@@ -2,11 +2,6 @@
 
 #include "traits.hpp"
 #include <type_traits>
-// TODO: Decide if it's worth passing events down the call chain just to have additional logging
-// information. As is, events are not passed down to `transition` from `dispatch event`.
-// If it turns out useful for guards and actions to take an `event` parameter it might be worth it.
-// Alternatively a dummy type<Event>{} could be passed to the logging functions, just to add the
-// type information without providing access to the actual instance.
 
 
 namespace ufsm

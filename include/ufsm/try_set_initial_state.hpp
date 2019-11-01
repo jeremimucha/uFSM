@@ -1,9 +1,10 @@
-#if !defined(TRY_SET_INITIAL_STATE_HPP_)
-#define TRY_SET_INITIAL_STATE_HPP_
+#pragma once
 
 #include <type_traits>
 #include "traits.hpp"
 #include "dispatch_event.hpp"
+#include "state_index.hpp"
+#include "initial_state.hpp"
 
 namespace ufsm
 {
@@ -33,7 +34,7 @@ struct trySetInitialState<State, true> {
         using fsm_t = std::decay_t<FsmT>;
         constexpr auto InitialStateIndex = StateIndex<GetStateList<fsm_t>, typename fsm_t::InitialState>;
         handle_dispatch_event(
-            Get<InitialStateIndex>(std::forward<FsmT>(fsm)),
+            get<InitialStateIndex>(std::forward<FsmT>(fsm)),
             std::forward<FsmT>(fsm),
             std::forward<Event>(event)
         );
@@ -43,5 +44,3 @@ struct trySetInitialState<State, true> {
 } // namespace detail
 } // namespace back
 } // namespace ufsm
-
-#endif // TRY_SET_INITIAL_STATE_HPP_

@@ -127,7 +127,7 @@ struct exitCurrentState<IndexSequence<I, Is...>> {
     {
         if (I == fsm.state()) {
             fsmExit<StateAt<I, FsmT>, FsmT, Event>{}(
-                Get<I>(std::forward<FsmT>(fsm)),
+                get<I>(std::forward<FsmT>(fsm)),
                 std::forward<FsmT>(fsm),
                 std::forward<Event>(event)
             );
@@ -156,7 +156,7 @@ struct tryExit<State, true> {
     template<typename FsmT, typename Event>
     constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept
     {
-        exitCurrentState<typename std::decay_t<FsmT>::Indices>{}(
+        exitCurrentState<GetIndices<FsmT>>{}(
             std::forward<FsmT>(fsm),
             std::forward<Event>(event)
         );
