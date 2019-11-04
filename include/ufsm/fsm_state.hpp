@@ -21,14 +21,13 @@ public:
     using type = State;
 
     constexpr FsmState() noexcept = default;
-    constexpr FsmState(FsmState&) = default;
     constexpr FsmState(FsmState const&) = default;
     constexpr FsmState(FsmState&&) noexcept = default;
     constexpr FsmState& operator=(FsmState const&) = default;
     constexpr FsmState& operator=(FsmState&&) noexcept = default;
 
     template<typename U
-        /* , typename = std::enable_if_t<!std::is_same_v<FsmState<...>,std::decay_t<U>>> */>
+        , typename = std::enable_if_t<!std::is_same_v<FsmState, std::decay_t<U>>>>
     constexpr FsmState(U&& fvalue) noexcept(std::is_nothrow_constructible_v<State,U>)
         : value_{std::forward<U>(fvalue)} { }
 

@@ -17,10 +17,6 @@ namespace back
 template<typename IndexSequence, typename... States>
 class Fsm_impl;
 
-// template<SizeT Idx, typename FsmT>
-// inline constexpr decltype(auto) get(FsmT&& fsm) noexcept;
-// Inheriting publicly because clang insists that declaring the `get` template a friend makes the
-// calls ambiguous. Inheriting publicly and not declaring `get` a friend for now as a workaound.
 template<SizeT... Indices, typename... States>
 class Fsm_impl<IndexSequence<Indices...>, States...>
     : public FsmState<Indices, typename StateTraitsT<States>::state_type>...
@@ -34,11 +30,6 @@ public:
         {
         }
 
-    template<typename... Ts>
-    constexpr Fsm_impl(Ts&&... states) noexcept((... && std::is_nothrow_constructible_v<States, Ts>))
-        : FsmState<Indices,States>{std::forward<Ts>(states)}...
-        { }
-
     template<typename State>
     constexpr void set_initial_state(initial_state_t<State>) noexcept
     {
@@ -47,10 +38,6 @@ public:
 
     constexpr inline SizeT state() const noexcept { return state_; }
     constexpr inline void state(SizeT new_state) noexcept { state_ = new_state; }
-
-    // clang insists that this friend declaration makes the calls to get ambiguous
-    // template<SizeT Idx, typename FsmT>
-    // friend constexpr decltype(auto) get(FsmT&& fsm) noexcept;
 private:
     SizeT state_{};
 };

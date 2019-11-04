@@ -32,16 +32,21 @@ struct Front<List<T, Ts...>> { using type = T; };
 template<template<typename...> class List>
 struct Front<List<>> { };
 
-template<typename C, typename T> struct ContainsTImpl;
+// template<typename C, typename T> struct ContainsTImpl;
 
-template<template<class...> class C, typename T, typename... Us>
-struct ContainsTImpl<C<Us...>, T> : std::disjunction<std::is_same<T, Us>...> { };
+// template<template<class...> class C, typename T, typename... Us>
+// struct ContainsTImpl<C<Us...>, T> : std::disjunction<std::is_same<T, Us>...> { };
+
+// template<typename C, typename T>
+// struct ContainsT : ContainsTImpl<C,T> { };
+
+// template<typename C, typename T>
+// static constexpr inline auto Contains{ContainsTImpl<C,T>::value};
 
 template<typename C, typename T>
-struct ContainsT : ContainsTImpl<C,T> { };
-
-template<typename C, typename T>
-static constexpr inline auto Contains{ContainsTImpl<C,T>::value};
+constexpr inline bool Contains{false};
+template<template<typename...> class C, typename T, typename... Us>
+constexpr inline bool Contains<C<Us...>, T>{std::disjunction_v<std::is_same<T, Us>...>};
 
 template<typename FsmT, typename = void_t<>>
 struct HasTransitionTableT : std::false_type { };

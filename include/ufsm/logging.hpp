@@ -124,18 +124,18 @@ auto get_type_name(const char *ptr, IndexSequence<Ns...>) noexcept {
 
 
 template <class T>
-const char* get_type_name() {
+constexpr const char* get_type_name() noexcept {
 // 53 -> offset from the beginning of name deduced by __PRETTY__FUNCTION
 // -2 -> trailing ']' and '\0' in the deduced name
-#if defined(COMPILING_WITH_MSVC)
-    return detail::get_type_name<T, 24>(
-        __PRETTY_FUNCTION__, MakeIndexSequence<sizeof(__PRETTY_FUNCTION__) - 24 - 2>{});
+#if defined(_MSC_VER)
+    return detail::get_type_name<T, 55>(
+        __FUNCSIG__, MakeIndexSequence<sizeof(__FUNCSIG__) - 55 - 17>{});
 #elif defined(__clang__)
-    return detail::get_type_name<T, 48>(
+    return detail::get_type_name<T, 58>(
         __PRETTY_FUNCTION__, MakeIndexSequence<sizeof(__PRETTY_FUNCTION__) - 48 - 2>{});
 #elif defined(__GNUC__)
-    return detail::get_type_name<T, 53>(
-        __PRETTY_FUNCTION__, MakeIndexSequence<sizeof(__PRETTY_FUNCTION__) - 53 - 2>{});
+    return detail::get_type_name<T, 63>(
+        __PRETTY_FUNCTION__, MakeIndexSequence<sizeof(__PRETTY_FUNCTION__) - 63 - 2>{});
 #endif
 }
 

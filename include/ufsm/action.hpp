@@ -214,10 +214,12 @@ template<SizeT I, SizeT... Is> struct propagateActionImpl<IndexSequence<I, Is...
             using state_fsm_t = StateAt<I, FsmT>;
             using state_t = BaseFsmState<state_fsm_t>;
             using event_t = std::decay_t<Event>;
-            decltype(auto) traits_tuple{
+            // auto&& or decltype(auto) ?
+            auto&& traits_tuple{
                 getTransitionTraits<state_t, event_t>(fsm.transition_table())
             };
-            decltype(auto) state{get<I>(fsm)};
+            // auto&& or decltype(auto) ?
+            auto&& state{get<I>(fsm)};
             using Indices = MakeIndexSequence<
                 std::tuple_size_v<std::decay_t<decltype(traits_tuple)>>>;
             executeAction<Indices>{}(

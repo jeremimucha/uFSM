@@ -20,7 +20,7 @@ function(DeclareCompilerConfigTarget target)
         target_compile_options(${target} INTERFACE
             /W4
             /permissive-
-            $<$<BOOL:${OPT_WERROR}>:/WX>
+            # $<$<BOOL:${OPT_WERROR}>:/WX>
         )
     else()
         target_compile_options(${target} INTERFACE

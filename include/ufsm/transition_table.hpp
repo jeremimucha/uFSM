@@ -226,8 +226,6 @@ constexpr auto make_transition_table(Entries&&... entries) noexcept
 
 namespace detail
 {
-// template<typename T> struct wrap_t { using type = T; };
-// template<typename T> constexpr inline auto wrap = wrap_t<T>{};
 template<typename T> struct state_t { using type = T; };
 template<typename T> struct event_t { using type = T; };
 template<typename T> struct next_state_t { using type = T; };

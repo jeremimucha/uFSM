@@ -20,4 +20,10 @@ template<typename T, typename U, bool = HasInitialState<T>> struct initial_state
 template<typename T, typename U>
 struct initial_state_or<T, U, true> { using type = typename T::InitialState; };
 
+template<typename T> struct IsInitialStateTypeT : std::false_type { };
+template<typename T>
+struct IsInitialStateTypeT<initial_state_t<T>> : std::true_type { };
+template<typename T>
+constexpr inline auto IsInitialStateType{IsInitialStateTypeT<T>::value};
+
 } // namespace ufsm
