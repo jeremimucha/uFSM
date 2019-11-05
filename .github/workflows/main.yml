@@ -1,0 +1,13 @@
+name: uFSM CI workflow
+on: push
+jobs:
+  build:
+    name: Build and run
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - uses: ./ci/gcc
+    - name: configure
+      run: cmake -G Ninja -S . -B ./build
+    - name: make
+      run: cmake -- build ./build -- -j8
