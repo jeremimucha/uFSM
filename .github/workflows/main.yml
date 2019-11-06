@@ -8,6 +8,7 @@ jobs:
     - uses: actions/checkout@master
     - uses: ./ci/gcc
     - name: configure
+      run: conan install . -if build
       run: cmake -G Ninja -S . -B ./build
     - name: make
-      run: cmake -- build ./build -- -j8
+      run: cmake --build ./build -- -j8
