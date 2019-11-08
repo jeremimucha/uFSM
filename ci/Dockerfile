@@ -22,4 +22,7 @@ RUN apt-get -yq update && apt-get -yq install software-properties-common \
 
 RUN pip3 install conan cmake
 
-ENTRYPOINT [ "/bin/bash", "-l" ]
+COPY build.sh /build.sh
+RUN chmod +x /build.sh
+
+ENTRYPOINT [ "/build.sh" ]
