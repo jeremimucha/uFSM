@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - uses: ./ci/gcc
+    - uses: ./ci
     - name: configure
       run: |
         conan install . -if build
