@@ -1,3 +1,4 @@
+include_guard()
 if(NOT WIN32)
     string(ASCII 27 Esc)
     set(ColorReset      "${Esc}[m")

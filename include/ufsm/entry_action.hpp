@@ -1,21 +1,19 @@
 #pragma once
 
+#include "dispatch_event.hpp"
+#include "entry_policy.hpp"
+#include "logging.hpp"
+#include "traits.hpp"
+#include "try_dispatch.hpp"
+#include "try_set_initial_state.hpp"
 #include <type_traits>
 #include <utility>
-#include "traits.hpp"
-#include "logging.hpp"
-#include "try_set_initial_state.hpp"
-#include "entry_policy.hpp"
-#include "try_dispatch.hpp"
-#include "dispatch_event.hpp"
 
 
-namespace ufsm
-{
-namespace back
-{
-namespace detail
-{
+namespace ufsm {
+namespace back {
+namespace detail {
+
 template<typename State, typename = void_t<>, typename... Args>
 struct HasEntryT : std::false_type { };
 
@@ -23,10 +21,7 @@ template<typename State, typename... Args>
 using state_entry_call = decltype(std::declval<State>().entry(std::declval<Args>()...));
 
 template<typename State, typename... Args>
-struct HasEntryT<State,
-                 void_t<state_entry_call<State, Args...>>,
-                 Args...>
-: std::true_type { };
+struct HasEntryT<State, void_t<state_entry_call<State, Args...>>, Args...> : std::true_type { };
 
 template<typename State, typename... Args>
 constexpr inline auto HasEntry{HasEntryT<State, void, Args...>::value};
@@ -37,7 +32,9 @@ struct EntryActionFsm { };
 struct EntryActionFsmEvent { };
 
 template<typename State, typename = void_t<>>
-struct SelectEntryActionT { using type = NoEntryAction; };
+struct SelectEntryActionT {
+    using type = NoEntryAction;
+};
 
 template<typename State>
 struct SelectEntryActionT<State, void_t<state_entry_call<State>>> {
@@ -69,13 +66,17 @@ struct tryEnter;
 template<typename State, typename = GetEntryPolicy<std::decay_t<State>>>
 struct propagateEntry {
     template<typename Event>
-    constexpr inline void operator()(State const&, Event&&) const noexcept {/* nop */}
+    constexpr inline void operator()(State const&, Event&&) const noexcept
+    { /* nop */
+    }
 };
-} // namespace detail
+}  // namespace detail
 
 // Intentionally do not decay the types here - HasEntry should decide if FsmT has an entry()
 // member callable with the given state including the qualifiers
-template<typename State_, typename FsmT_, typename Event_,
+template<typename State_,
+         typename FsmT_,
+         typename Event_,
          typename = detail::SelectEntryActionSignature<State_, FsmT_, Event_>>
 struct fsmEntry {
     template<typename State, typename FsmT, typename Event>
@@ -131,45 +132,38 @@ constexpr inline void fsm_entry(State&& state, FsmT&& fsm, Event&& event) noexce
 {
     // Intentionally do not decay the types here - HasEntry should decide if FsmT has an entry()
     // member callable with the given state including the qualifiers
-    fsmEntry<State, FsmT, Event>{}(
-        std::forward<State>(state), std::forward<FsmT>(fsm), std::forward<Event>(event)
-    );
+    fsmEntry<State, FsmT, Event>{}(std::forward<State>(state), std::forward<FsmT>(fsm), std::forward<Event>(event));
 }
 
-namespace detail
-{
+namespace detail {
 // TODO: optimization - narrow down Indices to only those referring to states which actually
 // do implement an entry-action
-template<typename Indices> struct enterCurrentState;
+template<typename Indices>
+struct enterCurrentState;
 template<>
 struct enterCurrentState<IndexSequence<>> {
     template<typename FsmT, typename Event>
-    constexpr inline void operator()(FsmT const&, Event const&) const noexcept { }
+    constexpr inline void operator()(FsmT const&, Event const&) const noexcept
+    { }
 };
 
 template<SizeT I, SizeT... Is>
 struct enterCurrentState<IndexSequence<I, Is...>> {
     template<typename FsmT, typename Event>
-    constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept {
-        if (I == fsm.state()) {
+    constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept
+    {
+        if (I == fsm.state())
+        {
             fsmEntry<StateAt<I, FsmT>, FsmT, Event>{}(
-                get<I>(std::forward<FsmT>(fsm)),
-                std::forward<FsmT>(fsm),
-                std::forward<Event>(event)
-            );
+              get<I>(std::forward<FsmT>(fsm)), std::forward<FsmT>(fsm), std::forward<Event>(event));
             // An optimization - dispatch directly into the current state index `I`, to avoid
             // calling tryDispatch - which would require iterating over states, searching for
             // the active one, again at runtime.
-            handle_dispatch_event(
-                get<I>(std::forward<FsmT>(fsm)),
-                std::forward<FsmT>(fsm),
-                std::forward<Event>(event)
-            );
+            handle_dispatch_event(get<I>(std::forward<FsmT>(fsm)), std::forward<FsmT>(fsm), std::forward<Event>(event));
         }
-        else {
-            enterCurrentState<IndexSequence<Is...>>{}(
-                std::forward<FsmT>(fsm), std::forward<Event>(event)
-            );
+        else
+        {
+            enterCurrentState<IndexSequence<Is...>>{}(std::forward<FsmT>(fsm), std::forward<Event>(event));
         }
     }
 };
@@ -177,27 +171,26 @@ struct enterCurrentState<IndexSequence<I, Is...>> {
 template<typename State_, bool>
 struct tryEnter {
     template<typename State, typename Event>
-    constexpr inline void operator()(State&&, Event&&) const noexcept {/* nop */}
+    constexpr inline void operator()(State&&, Event&&) const noexcept
+    { /* nop */
+    }
 };
 
 template<typename State>
 struct tryEnter<State, true> {
     template<typename FsmT, typename Event>
-    constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept {
-        enterCurrentState<GetIndices<FsmT>>{}(
-            std::forward<FsmT>(fsm), std::forward<Event>(event)
-        );
+    constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept
+    {
+        enterCurrentState<GetIndices<FsmT>>{}(std::forward<FsmT>(fsm), std::forward<Event>(event));
     }
 };
 
 template<typename State>
 struct propagateEntry<State, InitialStateEntryPolicy> {
     template<typename FsmT, typename Event>
-    constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept {
-        detail::trySetInitialState<std::decay_t<FsmT>>{}(
-            std::forward<FsmT>(fsm),
-            std::forward<Event>(event)
-        );
+    constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept
+    {
+        detail::trySetInitialState<std::decay_t<FsmT>>{}(std::forward<FsmT>(fsm), std::forward<Event>(event));
     }
 };
 
@@ -206,13 +199,11 @@ struct propagateEntry<State, CurrentStateEntryPolicy> {
     template<typename FsmT, typename Event>
     constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept
     {
-        detail::tryEnter<std::decay_t<FsmT>>{}(
-            std::forward<FsmT>(fsm), std::forward<Event>(event)
-        );
+        detail::tryEnter<std::decay_t<FsmT>>{}(std::forward<FsmT>(fsm), std::forward<Event>(event));
     }
 };
-} // namespace detail
+}  // namespace detail
 
 
-} // namespace back
-} // namespace ufsm
+}  // namespace back
+}  // namespace ufsm

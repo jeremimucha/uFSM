@@ -1,65 +1,48 @@
+include_guard()
+
 include(${CMAKE_CURRENT_LIST_DIR}/colors.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/prefix.cmake)
 
-function(CoverageTargets)
-    GetProjectPrefix(prefix)
-    if(${OPT_COVERAGE})
-        set(COVERAGE_DIR ${CMAKE_BINARY_DIR}/coverage)
-        file(MAKE_DIRECTORY ${COVERAGE_DIR})
+function(ConfigureCoverage)
+  set(arg_options)
+  set(arg_kwargs NAMESPACE TARGET OUT)
+  set(arg_list_args)
+  cmake_parse_arguments(arg "${arg_options}" "${arg_kwargs}" "${arg_list_args}" ${ARGN})
+  foreach(unparsed_arg IN LISTS arg_UNPARSED_ARGUMENTS)
+      message(WARNING "${ColorYellow}Unparsed argument: ${unparsed_arg}${ColorReset}")
+  endforeach()
 
-        find_program(GCOV NAMES gcov gcov-9 gcov-8)
-        if (NOT GCOV)
-            message(FATAL_ERROR "${ColorRed}Failed to find gcov${ColorReset}")
-        endif()
-        find_program(GCOVR gcovr)
-        if (NOT GCOVR)
-            message(FATAL_ERROR "${ColorRed}Failed to find gcovr${ColorReset}")
-        endif()
+  AssertOptionsDefined()
 
-        set(COVERAGE_COMMAND
-            ${GCOVR}
-                --gcov-executable ${GCOV}
-                --root ${CMAKE_SOURCE_DIR}
-                --exclude-directories "build.*"
-                --print-summary
-                --exclude-unreachable-branches
-                --object-directory ${CMAKE_BINARY_DIR}
-        )
-        set(COVERAGE_COMMAND_HTML
-            ${COVERAGE_COMMAND}
-            --html
-            --html-details
-            --output ${COVERAGE_DIR}/index.html
-        )
-        set(COVERAGE_COMMAND_XML
-            ${COVERAGE_COMMAND}
-                --xml-pretty
-                --output ${COVERAGE_DIR}/coverage.xml
-        )
-        add_custom_target(coverage
-            COMMAND ${COVERAGE_COMMAND_HTML}
-            USES_TERMINAL
-        )
-        add_custom_target(coverage-xml
-            COMMAND ${COVERAGE_COMMAND_XML}
-            USES_TERMINAL
-        )
-        CoverageClearCommand(COVERAGE_COMMAND_CLEAR)
-        add_custom_target(coverage-clear
-            COMMAND ${COVERAGE_COMMAND_CLEAR}
-            USES_TERMINAL
-        )
+  if(${OptCoverage_})
+    if(NOT arg_NAMESPACE)
+      set(arg_NAMESPACE ${PROJECT_NAME})
     endif()
-endfunction()
-
-function(CoverageClearCommand out)
-    if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        message(STATUS "${ColorYellow}MSVC toolchain detected: coverage-clear target is no-op${ColorReset}")
-        set(${out} "")
-    else()
-        set(${out}
-            find ${CMAKE_BINARY_DIR}/ -name "*.gcda" -delete
-            PARENT_SCOPE
-        )
+    if(NOT arg_TARGET)
+      set(arg_TARGET CoverageConfig)
     endif()
+
+    if(NOT arg_OUT)
+      set(arg_OUT PROJECT_COVERAGE_TARGET)
+    endif()
+
+    set(_targetName ${arg_NAMESPACE}_${arg_TARGET})
+    message(STATUS "ConfigureCoverage: available as ${_targetName} and \$\{${arg_OUT}\}")
+    set(${arg_OUT} ${_targetName} PARENT_SCOPE)
+
+    if(TARGET ${_targetName})
+      return()
+    endif()
+    
+    add_library(${_targetName} INTERFACE IMPORTED)
+    add_library(${arg_NAMESPACE}::${arg_TARGET} ALIAS ${_targetName})
+
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+      target_compile_options(${_targetName}
+          INTERFACE --coverage -O0 -ggdb3
+      )
+      target_link_libraries(${_targetName}
+          INTERFACE --coverage
+      )
+    endif()
+  endif()
 endfunction()

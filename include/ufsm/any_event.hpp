@@ -1,9 +1,8 @@
 #pragma once
 
-namespace ufsm
-{
+namespace ufsm {
 
 struct AnyEventT { };
 constexpr inline AnyEventT AnyEvent{};
 
-} // namespace ufsm
+}  // namespace ufsm

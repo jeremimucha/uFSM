@@ -1,11 +1,10 @@
 #pragma once
 
+#include "fsmfwd.hpp"
 #include <type_traits>
 #include <utility>
-#include "fsmfwd.hpp"
 
-namespace ufsm
-{
+namespace ufsm {
 
 using SizeT = int;
 
@@ -21,14 +20,24 @@ using MakeIndexSequence = std::make_integer_sequence<SizeT, N>;
 template<typename... Ts>
 using IndexSequenceFor = MakeIndexSequence<sizeof...(Ts)>;
 
-template<typename...> struct Typelist { };
-template<typename...> using void_t = void;
-template<typename T> struct Identity { using type = T; };
-template<typename...> struct AlwaysFalseT : std::false_type { };
-template<typename... Ts> constexpr inline auto AlwaysFalse{AlwaysFalseT<Ts...>::value};
-template<typename Typelist> struct Front;
+template<typename...>
+struct Typelist { };
+template<typename...>
+using void_t = void;
+template<typename T>
+struct Identity {
+    using type = T;
+};
+template<typename...>
+struct AlwaysFalseT : std::false_type { };
+template<typename... Ts>
+constexpr inline auto AlwaysFalse{AlwaysFalseT<Ts...>::value};
+template<typename Typelist>
+struct Front;
 template<template<typename...> class List, class T, class... Ts>
-struct Front<List<T, Ts...>> { using type = T; };
+struct Front<List<T, Ts...>> {
+    using type = T;
+};
 template<template<typename...> class List>
 struct Front<List<>> { };
 
@@ -51,20 +60,21 @@ constexpr inline bool Contains<C<Us...>, T>{std::disjunction_v<std::is_same<T, U
 template<typename FsmT, typename = void_t<>>
 struct HasTransitionTableT : std::false_type { };
 template<typename FsmT>
-struct HasTransitionTableT<FsmT, void_t<decltype(std::declval<FsmT>().transition_table())>>
-    : std::true_type { };
+struct HasTransitionTableT<FsmT, void_t<decltype(std::declval<FsmT>().transition_table())>> : std::true_type { };
 template<typename FsmT>
 constexpr inline auto HasTransitionTable{HasTransitionTableT<FsmT>::value};
 
-template<typename T> struct GetStateListT;
-template<template<typename,typename>class FsmT, typename Impl, typename Statelist>
+template<typename T>
+struct GetStateListT;
+template<template<typename, typename> class FsmT, typename Impl, typename Statelist>
 struct GetStateListT<FsmT<Impl, Statelist>> {
     using type = Statelist;
 };
 template<typename T>
 using GetStateList = typename GetStateListT<T>::type;
 
-template<typename T> struct GetIndicesT;
+template<typename T>
+struct GetIndicesT;
 template<typename Impl, typename... States>
 struct GetIndicesT<Fsm<Impl, States...>> {
     using type = MakeIndexSequence<sizeof...(States)>;
@@ -72,4 +82,4 @@ struct GetIndicesT<Fsm<Impl, States...>> {
 template<typename FsmT>
 using GetIndices = typename GetIndicesT<std::decay_t<FsmT>>::type;
 
-} // namespace ufsm
+}  // namespace ufsm

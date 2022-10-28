@@ -3,11 +3,8 @@
 
 #include "traits.hpp"
 
-namespace ufsm
-{
-
-namespace detail
-{
+namespace ufsm {
+namespace detail {
 
 template<typename FsmT, typename = void_t<>>
 struct HasEntryPolicyT : std::false_type { };
@@ -16,7 +13,7 @@ struct HasEntryPolicyT<FsmT, void_t<typename FsmT::EntryPolicy>> : std::true_typ
 template<typename FsmT>
 constexpr inline auto HasEntryPolicy{HasEntryPolicyT<FsmT>::value};
 
-} // namespace detail
+}  // namespace detail
 
 struct InitialStateEntryPolicy { };
 struct CurrentStateEntryPolicy { };
@@ -32,6 +29,6 @@ struct GetEntryPolicyT<FsmT, true> {
 template<typename FsmT>
 using GetEntryPolicy = typename GetEntryPolicyT<FsmT>::type;
 
-} // namespace ufsm
+}  // namespace ufsm
 
-#endif // ENTRY_POLICY_HEADER_GUARD_HPP_
+#endif  // ENTRY_POLICY_HEADER_GUARD_HPP_

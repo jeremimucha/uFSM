@@ -1,6 +1,6 @@
+#include "stopwatch/stopwatch.h"
 #include <iostream>
 #include <ufsm/fsm.hpp>
-#include "stopwatch/stopwatch.h"
 
 
 struct ePlay { };
@@ -39,44 +39,35 @@ struct animation_logger;
 struct animation_logger {
     template<typename State, typename Event>
     void log_event(Animation const&, State const&, Event const&) const noexcept
-    {
-    }
+    { }
     template<typename Guard>
     void log_guard(Animation const&, Guard const&, bool /* result */) const noexcept
-    {
-    }
+    { }
     template<typename Action, typename Event>
     void log_action(Animation const&, Action const&, Event const&) const noexcept
-    {
-    }
+    { }
     template<typename State>
     void log_exit(Animation const&, State const&) const noexcept
-    {
-    }
+    { }
     template<typename State>
     void log_entry(Animation const&, State const&) const noexcept
-    {
-    }
+    { }
     template<typename SrcState, typename DstState>
     void log_state_change(Animation const&, SrcState const&, DstState const&) const noexcept
-    {
-    }
+    { }
 };
 
-class Animation //: public ufsm::Fsm<Animation, sAnimating, sPaused, sIdle>
+class Animation  //: public ufsm::Fsm<Animation, sAnimating, sPaused, sIdle>
 {
-public:
+  public:
     // using Base = ufsm::Fsm<Animation, sAnimating, sPaused, sIdle>;
     // using Base::Base;
 
-    static constexpr inline animation_logger& logger() noexcept
-    {
-        return Animation::logger_;
-    }
+    static constexpr inline animation_logger& logger() noexcept { return Animation::logger_; }
 
     // static constexpr inline auto const& transition_table() noexcept { return transition_table_; }
 
-// --- data members
+    // --- data members
     unsigned counter{0};
     static constexpr inline unsigned counter_limit{42};
 
@@ -84,18 +75,23 @@ public:
     // constexpr auto action1 = [](Animation const&) noexcept { std::cerr << __PRETTY_FUNCTION__ << "\n" };
     struct guard1 {
         template<typename Event>
-        constexpr bool operator()(Event const&) const noexcept {return true;}
+        constexpr bool operator()(Event const&) const noexcept
+        {
+            return true;
+        }
     };
     struct action1 {
         template<typename Event>
-        void operator()(Event&&) const {
+        void operator()(Event&&) const
+        {
             // std::cerr << __PRETTY_FUNCTION__ << "\n";
         }
     };
     struct guard2 {
         Animation const& fsm_;
         template<typename Event>
-        constexpr bool operator()(Event const&) const noexcept {
+        constexpr bool operator()(Event const&) const noexcept
+        {
             return fsm_.counter >= Animation::counter_limit;
         }
     };
@@ -104,16 +100,16 @@ public:
     {
         using namespace ufsm;
         return make_transition_table(
-            make_entry(from_state<sIdle>, event<ePlay>, next_state<sAnimating>, guard1{}, action1{}),
-            make_entry(from_state<sAnimating>, event<eUpdate>, next_state<sIdle>)
-                .add_guard([](Animation const&, auto&& /* event */)noexcept{return false;}),
-            make_entry(from_state<sAnimating>,event<ePause>,next_state<sPaused>),
-            make_entry(from_state<sAnimating>,event<eStop>,next_state<sIdle>),
-            make_entry(from_state<sPaused>,event<ePlay>,next_state<sAnimating>),
-            make_entry(from_state<sPaused>,event<eStop>,next_state<sIdle>)
-        );
+        make_entry(ufsm_from_state<sIdle>, ufsm_event<ePlay>, ufsm_next_state<sAnimating>, guard1{}, action1{}),
+        make_entry(ufsm_from_state<sAnimating>, ufsm_event<eUpdate>, ufsm_next_state<sIdle>)
+        .add_guard([](Animation const&, auto&& /* event */) noexcept { return false; }),
+        make_entry(ufsm_from_state<sAnimating>, ufsm_event<ePause>, ufsm_next_state<sPaused>),
+        make_entry(ufsm_from_state<sAnimating>, ufsm_event<eStop>, ufsm_next_state<sIdle>),
+        make_entry(ufsm_from_state<sPaused>, ufsm_event<ePlay>, ufsm_next_state<sAnimating>),
+        make_entry(ufsm_from_state<sPaused>, ufsm_event<eStop>, ufsm_next_state<sIdle>));
     }
-private:
+
+  private:
     static inline animation_logger logger_{};
 };
 
@@ -127,13 +123,13 @@ inline void sAnimating::handle_event(Animation& fsm, eUpdate) const noexcept
 // template<typename Event>
 // inline void sAnimating::handle_event(Animation& fsm,Event) const noexcept
 // {
-    // std::cerr << "\t" << __PRETTY_FUNCTION__ << ", counter = " << fsm.counter << "\n";
+// std::cerr << "\t" << __PRETTY_FUNCTION__ << ", counter = " << fsm.counter << "\n";
 // }
 
 // template<typename Event>
 // inline void sPaused::handle_event(Animation& fsm,Event) const noexcept
 // {
-    // std::cerr << "\t" << __PRETTY_FUNCTION__ << ", counter = " << fsm.counter << "\n";
+// std::cerr << "\t" << __PRETTY_FUNCTION__ << ", counter = " << fsm.counter << "\n";
 // }
 
 inline void sIdle::entry(Animation& fsm) noexcept
@@ -153,14 +149,16 @@ void sPaused::entry(Animation const& /* fsm */) const
 }
 
 struct testguard1 {
-    inline bool operator()(Animation const&) const{
+    inline bool operator()(Animation const&) const
+    {
         std::cerr << "testguard1\n";
         return true;
     }
 };
 
 struct testguard2 {
-    inline bool operator()(Animation const&) const{
+    inline bool operator()(Animation const&) const
+    {
         std::cerr << "testguard2\n";
         return false;
     }
@@ -168,7 +166,8 @@ struct testguard2 {
 
 struct testaction {
     template<typename Event>
-    inline void operator()(Event const&) const {
+    inline void operator()(Event const&) const
+    {
         std::cerr << "testaction\n";
     }
 };
@@ -176,24 +175,23 @@ struct testaction {
 template<typename SM, typename... Events>
 inline void send_events(SM&& fsm, Events&&... events) noexcept
 {
-    ( ... , fsm.dispatch_event(std::forward<Events>(events)) );
+    (..., fsm.dispatch_event(std::forward<Events>(events)));
 }
 
 template<typename T>
 inline void run_animation(T&& fsm) noexcept
 {
     send_events(std::forward<T>(fsm),
-        ePlay{},
-        eUpdate{},
-        ePause{},
-        eUpdate{},
-        ePlay{},
-        eUpdate{},
-        eStop{},
-        ePlay{},
-        eUpdate{},
-        eStop{}
-        );
+                ePlay{},
+                eUpdate{},
+                ePause{},
+                eUpdate{},
+                ePlay{},
+                eUpdate{},
+                eStop{},
+                ePlay{},
+                eUpdate{},
+                eStop{});
 }
 
 int main()
@@ -202,18 +200,18 @@ int main()
     // std::cerr << "has_guard = " << has_guard_v<transition_table<sAnimating,eUpdate>> << "\n";
     // auto animation = Animation{};
     ufsm::Fsm<Animation> animation{};
-    animation.set_initial_state(ufsm::initial_state_v<sIdle>);    // or explicitly later
+    animation.set_initial_state(ufsm::initial_state_v<sIdle>);  // or explicitly later
 
     constexpr auto num_laps = 1'000'000u;
     auto sw = Stopwatch{"Animation"};
-    for (auto i=0u; i<num_laps; ++i) {
+    for (auto i = 0u; i < num_laps; ++i)
+    {
         run_animation(animation);
     }
     sw.stop();
     const auto total = sw.lap_get();
     std::cout << "Animation benchmark over " << num_laps << " iterations:\n"
-        << "-   total = " << total << " ms\n"
-        << "-   average per 10 transitions = " << static_cast<double>(total) / num_laps << " ms\n"
-        << "-   average per transition = " << static_cast<double>(total) / num_laps /10 << " ms\n";
-
+              << "-   total = " << total << " ms\n"
+              << "-   average per 10 transitions = " << static_cast<double>(total) / num_laps << " ms\n"
+              << "-   average per transition = " << static_cast<double>(total) / num_laps / 10 << " ms\n";
 }

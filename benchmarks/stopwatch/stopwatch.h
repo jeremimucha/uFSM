@@ -1,36 +1,40 @@
 #pragma once
 
-#include <iostream>
 #include <chrono>
+#include <iostream>
 
 
 template<typename T>
-class basic_stopwatch : T
-{
+class basic_stopwatch : T {
     using BaseTimer = T;
-public:
+
+  public:
     // create, optionally start timing an activity
-    explicit basic_stopwatch(std::ostream& log, bool start=true) noexcept
-        : log_{log}
+    explicit basic_stopwatch(std::ostream& log, bool start = true) noexcept
+      : log_{log}
+    {
+        if (start)
         {
-            if (start) {
-                BaseTimer::start();
-            }
+            BaseTimer::start();
         }
-    explicit basic_stopwatch(const char* activity, bool start=true) noexcept
-        : activity_{activity}
+    }
+    explicit basic_stopwatch(const char* activity, bool start = true) noexcept
+      : activity_{activity}
+    {
+        if (start)
         {
-            if (start) {
-                BaseTimer::start();
-            }
+            BaseTimer::start();
         }
-    basic_stopwatch(std::ostream& log, const char* activity, bool start=true) noexcept
-        : activity_{activity}, log_{log}
+    }
+    basic_stopwatch(std::ostream& log, const char* activity, bool start = true) noexcept
+      : activity_{activity}
+      , log_{log}
+    {
+        if (start)
         {
-            if (start) {
-                BaseTimer::start();
-            }
+            BaseTimer::start();
         }
+    }
 
     // stop and destroy the stopwatch
     ~basic_stopwatch() noexcept { stop(); }
@@ -47,7 +51,7 @@ public:
     bool is_started() const noexcept { return BaseTimer::is_started(); }
 
     // show accumulated time, keep running, set/return lap
-    unsigned show(const char* event="show")
+    unsigned show(const char* event = "show")
     {
         lap_ = BaseTimer::get_ms();
         log_event(event);
@@ -72,54 +76,46 @@ public:
         return lap_;
     }
 
-private:
+  private:
     inline void log_event(const char* const event) const noexcept
     {
         log_ << activity_ << ": " << event << " " << lap_ << "ms\n";
     }
 
-    const char*   activity_{"Stopwatch"};
-    unsigned      lap_{0};
+    const char* activity_{"Stopwatch"};
+    unsigned lap_{0};
     std::ostream& log_{std::cout};
 };
 
-class TimerBase
-{
+class TimerBase {
     using time_point = std::chrono::steady_clock::time_point;
     using clock_type = std::chrono::steady_clock;
     using milliseconds = std::chrono::milliseconds;
     using microseconds = std::chrono::microseconds;
-public:
+
+  public:
     TimerBase() noexcept
-        : start_{time_point::min()}
-        { }
+      : start_{time_point::min()}
+    { }
 
-    bool is_started() const noexcept
-    {
-        return start_.time_since_epoch() != clock_type::duration{0};
-    }
+    bool is_started() const noexcept { return start_.time_since_epoch() != clock_type::duration{0}; }
 
-    void clear() noexcept
-    {
-        start_ = time_point::min();
-    }
+    void clear() noexcept { start_ = time_point::min(); }
 
-    void start() noexcept
-    {
-        start_ = clock_type::now();
-    }
+    void start() noexcept { start_ = clock_type::now(); }
 
     // get the number of milliseconds since the timer was started
     unsigned long get_ms() const noexcept
     {
-        if (is_started()) {
+        if (is_started())
+        {
             const auto diff = clock_type::now() - start_;
             return static_cast<unsigned long>(std::chrono::duration_cast<milliseconds>(diff).count());
         }
         return 0;
     }
 
-private:
+  private:
     time_point start_;
 };
 

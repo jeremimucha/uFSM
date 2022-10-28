@@ -1,36 +1,30 @@
 #pragma once
 
+#include "fsmfwd.hpp"
+#include "logging.hpp"
+#include "state_transition.hpp"
+#include "traits.hpp"
+#include "try_dispatch.hpp"
 #include <type_traits>
 #include <utility>
-#include "traits.hpp"
-#include "state_transition.hpp"
-#include "try_dispatch.hpp"
-#include "logging.hpp"
-#include "fsmfwd.hpp"
 
 
-namespace ufsm
-{
-namespace back
-{
-namespace detail
-{
+namespace ufsm {
+namespace back {
+namespace detail {
 
 template<typename State, typename Void, typename... Args>
 struct HasHandleEventTImpl : std::false_type { };
 template<typename State, typename... Args>
 struct HasHandleEventTImpl<State,
-    void_t<decltype(std::declval<State>().handle_event(std::declval<Args>()...))>,
-    Args...>
-    : std::true_type
-{
-};
+                           void_t<decltype(std::declval<State>().handle_event(std::declval<Args>()...))>,
+                           Args...> : std::true_type { };
 template<typename State, typename... Args>
 struct HasHandleEventT : HasHandleEventTImpl<State, void, Args...> { };
 template<typename State, typename... Args>
-constexpr inline auto HasHandleEvent{HasHandleEventT<State,Args...>::value};
+constexpr inline auto HasHandleEvent{HasHandleEventT<State, Args...>::value};
 
-} // namespace detail
+}  // namespace detail
 
 // 1. Evaluate the guard condition associated with the transition and perform the following steps
 //    only if the guard evaluates to TRUE.
@@ -55,19 +49,19 @@ constexpr inline void handle_dispatch_event(State&& state, FsmT&& fsm, Event&& e
     detail::tryDispatch<State>{}(state, event);
     // down from here - cast to the actual State type (if state is Fsm)
     logging::fsm_log_event(fsm, detail::asBaseState(state), event);
-    if constexpr (detail::HasHandleEvent<state_t, FsmT, Event>) {
+    if constexpr (detail::HasHandleEvent<state_t, FsmT, Event>)
+    {
         state.handle_event(fsm, std::forward<Event>(event));
     }
     stateTransition<event_t, std::decay_t<FsmT>, State>{}(
-        std::forward<FsmT>(fsm),
-        std::forward<State>(state),
-        std::forward<Event>(event)
-        );
+      std::forward<FsmT>(fsm), std::forward<State>(state), std::forward<Event>(event));
 }
 
-template<typename Indices> struct dispatchEvent;
+template<typename Indices>
+struct dispatchEvent;
 
-template<> struct dispatchEvent<IndexSequence<>> {
+template<>
+struct dispatchEvent<IndexSequence<>> {
     template<typename FsmT, typename Event>
     constexpr inline void operator()(FsmT&&, Event&&) const noexcept
     {
@@ -75,24 +69,21 @@ template<> struct dispatchEvent<IndexSequence<>> {
     }
 };
 
-template<SizeT I, SizeT... Is> struct dispatchEvent<IndexSequence<I, Is...>> {
+template<SizeT I, SizeT... Is>
+struct dispatchEvent<IndexSequence<I, Is...>> {
     template<typename FsmT, typename Event>
     constexpr inline void operator()(FsmT&& fsm, Event&& event) const noexcept
     {
-        if (I == fsm.state()) {
-            handle_dispatch_event(
-                get<I>(std::forward<FsmT>(fsm)),
-                std::forward<FsmT>(fsm),
-                std::forward<Event>(event)
-            );
+        if (I == fsm.state())
+        {
+            handle_dispatch_event(get<I>(std::forward<FsmT>(fsm)), std::forward<FsmT>(fsm), std::forward<Event>(event));
         }
-        else {
-            dispatchEvent<IndexSequence<Is...>>{}(
-                std::forward<FsmT>(fsm), std::forward<Event>(event)
-            );
+        else
+        {
+            dispatchEvent<IndexSequence<Is...>>{}(std::forward<FsmT>(fsm), std::forward<Event>(event));
         }
     }
 };
 
-} // namespace back
-} // namespace ufsm
+}  // namespace back
+}  // namespace ufsm

@@ -2,8 +2,7 @@
 
 #include "traits.hpp"
 
-namespace ufsm
-{
+namespace ufsm {
 
 template<typename State, bool = HasTransitionTable<State>>
 struct StateTraitsT {
@@ -15,4 +14,4 @@ struct StateTraitsT<State, true> {
     using state_type = ::ufsm::Fsm<State>;
 };
 
-} // namespace ufsm
+}  // namespace ufsm

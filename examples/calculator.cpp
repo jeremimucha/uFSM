@@ -1,21 +1,22 @@
-#include <iostream>
-#include <cmath>
-#include <ufsm/fsm.hpp>
 #include "trace_logger.hpp"
+#include <cmath>
+#include <iostream>
+#include <ufsm/fsm.hpp>
 
-namespace e
-{
+namespace e {
 struct Op {
     char key;
 };
 struct CE { };
 struct C { };
 struct Digit_0 { };
-struct Digit_1_9 { int value; };
+struct Digit_1_9 {
+    int value;
+};
 struct Point { };
 struct Equals { };
 struct Off { };
-} // namespace e
+}  // namespace e
 
 struct Calculator;
 struct On;
@@ -94,8 +95,7 @@ struct OpEntered { };
 struct Error { };
 struct Init { };
 
-struct Ready
-{
+struct Ready {
     static inline trace_logger<Ready> logger_{};
     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
 
@@ -104,45 +104,39 @@ struct Ready
 
     using InitialState = Begin;
     // using EntryPolicy = ufsm::InitialStateEntryPolicy;
-    constexpr inline auto transition_table() const noexcept {
+    constexpr inline auto transition_table() const noexcept
+    {
         using namespace ufsm;
-        return make_transition_table(
-            make_entry(from_state<Begin>, event<e::Equals>, next_state<Result>),
-            make_entry(from_state<Result>, event<AnyEventT>, next_state<Begin>),
-            make_entry(from_state<Error>, event<AnyEventT>, next_state<Begin>)
-        );
+        return make_transition_table(make_entry(ufsm_from_state<Begin>, ufsm_event<e::Equals>, ufsm_next_state<Result>),
+                                     make_entry(ufsm_from_state<Result>, ufsm_event<AnyEventT>, ufsm_next_state<Begin>),
+                                     make_entry(ufsm_from_state<Error>, ufsm_event<AnyEventT>, ufsm_next_state<Begin>));
     }
 };
 
-template<typename T>
-[[nodiscard]] constexpr inline auto digit_count(T value) noexcept
+template<typename T> [[nodiscard]] constexpr inline auto digit_count(T value) noexcept
 {
     auto digits{0};
-    while(++digits && value) {
+    while (++digits && value)
+    {
         value /= 10;
     }
     return digits;
 }
 
-template<std::size_t I>
-struct Operand {
+template<std::size_t I> struct Operand {
     int integral_;
     int fractional_;
 
     static inline trace_logger<Operand> logger_{};
     static constexpr inline decltype(auto) logger() noexcept { return logger_; }
 
-    constexpr void entry() noexcept // no-argument entry-action, the same is valid for exit
+    constexpr void entry() noexcept  // no-argument entry-action, the same is valid for exit
     {
         integral_ = 0;
         fractional_ = 0;
     }
 
-    template<typename T>
-    static constexpr inline void increment(T& v) noexcept
-    {
-        v *= 10;
-    }
+    template<typename T> static constexpr inline void increment(T& v) noexcept { v *= 10; }
 
     [[nodiscard]] constexpr inline auto eval() const noexcept
     {
@@ -156,32 +150,27 @@ struct Operand {
     // to the initial state on entry
     using EntryPolicy = ufsm::CurrentStateEntryPolicy;
 
-    constexpr inline auto transition_table() const noexcept {
+    constexpr inline auto transition_table() const noexcept
+    {
         using namespace ufsm;
-        auto const add_zero = [](Operand& s, e::Digit_0) noexcept {
-            increment(s.integral_);
-        };
+        auto const add_zero = [](Operand& s, e::Digit_0) noexcept { increment(s.integral_); };
         auto const add_digit = [](Operand& s, e::Digit_1_9 e) noexcept {
             increment(s.integral_);
             s.integral_ += e.value;
         };
 
         return make_transition_table(
-            make_aentry(from_state<Zero>, event<e::Digit_1_9>, next_state<Int>, add_digit),
-            make_entry(from_state<Zero>, event<e::Point>, next_state<Fraction>),
-            make_aentry(from_state<Int>, event<e::Digit_0>, add_zero),
-            make_aentry(from_state<Int>, event<e::Digit_1_9>, add_digit),
-            make_entry(from_state<Int>, event<e::Point>, next_state<Fraction>),
-            make_aentry(from_state<Fraction>, event<e::Digit_0>,
-                [](Operand& s, e::Digit_0){
-                    increment(s.fractional_);
-            }),
-            make_aentry(from_state<Fraction>, event<e::Digit_1_9>,
-                [](Operand& s, e::Digit_1_9 e){
-                    increment(s.fractional_);
-                    s.fractional_ += e.value;
-            })
-        );
+        make_aentry(ufsm_from_state<Zero>, ufsm_event<e::Digit_1_9>, ufsm_next_state<Int>, add_digit),
+        make_entry(ufsm_from_state<Zero>, ufsm_event<e::Point>, ufsm_next_state<Fraction>),
+        make_aentry(ufsm_from_state<Int>, ufsm_event<e::Digit_0>, add_zero),
+        make_aentry(ufsm_from_state<Int>, ufsm_event<e::Digit_1_9>, add_digit),
+        make_entry(ufsm_from_state<Int>, ufsm_event<e::Point>, ufsm_next_state<Fraction>),
+        make_aentry(
+        ufsm_from_state<Fraction>, ufsm_event<e::Digit_0>, [](Operand& s, e::Digit_0) { increment(s.fractional_); }),
+        make_aentry(ufsm_from_state<Fraction>, ufsm_event<e::Digit_1_9>, [](Operand& s, e::Digit_1_9 e) {
+            increment(s.fractional_);
+            s.fractional_ += e.value;
+        }));
     }
 };
 using Operand1 = Operand<1>;
@@ -201,10 +190,10 @@ struct On {
     }
     template<typename SM> constexpr void exit(SM const&) const noexcept { }
 
-    template<typename T>
-    void update(T rhs)
+    template<typename T> void update(T rhs)
     {
-        switch (op_) {
+        switch (op_)
+        {
         case '+':
             total_ += rhs;
             break;
@@ -226,53 +215,57 @@ struct On {
     constexpr inline auto transition_table() const noexcept
     {
         using namespace ufsm;
-        auto const guard_op_minus{ [](e::Op evt) noexcept { return evt.key == '-'; } };
-        auto const guard_division_by_zero{ [](auto const& fsm, e::Equals) noexcept {
-                return fsm.op_ == '/' && ufsm::get<Operand2>(fsm).eval() == 0;
-            }};
-        auto const action_set_op{ [](auto& fsm, e::Op op) noexcept {fsm.op_ = op.key;} };
+        auto const guard_op_minus{[](e::Op evt) noexcept { return evt.key == '-'; }};
+        auto const guard_division_by_zero{
+        [](auto const& fsm, e::Equals) noexcept { return fsm.op_ == '/' && ufsm::get<Operand2>(fsm).eval() == 0; }};
+        auto const action_set_op{[](auto& fsm, e::Op op) noexcept { fsm.op_ = op.key; }};
 
         return make_transition_table(
-            make_entry(from_state<Ready>, event<e::Digit_0>, next_state<Operand1>),
-            make_entry(from_state<Ready>, event<e::Digit_1_9>, next_state<Operand1>),
-            make_entry(from_state<Ready>, event<e::Point>, next_state<Operand1>),
-            make_entry(from_state<Ready>, event<e::Op>, next_state<OpEntered>, action_set_op),
-            make_entry(from_state<Operand1>, event<e::CE>, next_state<Ready>),
-            make_aentry(from_state<Operand1>, event<e::Op>, next_state<OpEntered>,
-                [](auto& fsm, e::Op op) noexcept {
-                    fsm.total_ = ufsm::get<Operand1>(fsm).eval();
-                    fsm.op_ = op.key;
-                }),
-            make_entry(from_state<OpEntered>, event<e::Digit_0>, next_state<Operand2>),
-            make_entry(from_state<OpEntered>, event<e::Digit_1_9>, next_state<Operand2>),
-            make_entry(from_state<OpEntered>, event<e::Point>, next_state<Operand2>),
-            make_aentry(from_state<OpEntered>, event<e::Op>, next_state<OpEntered>, action_set_op),
-            make_entry(from_state<Operand2>, event<e::CE>, next_state<Operand2> /* Operand2 cleared on entry */),
-            make_aentry(from_state<Operand2>, event<e::Op>, next_state<OpEntered>,
-                [](auto& fsm, e::Op op) noexcept {
-                    // calculate and display the current total
-                    auto const rhs{ufsm::get<Operand2>(fsm).eval()};
-                    fsm.update(rhs);
-                    fsm.op_ = op.key;
-            }),
-            make_entry(from_state<Operand2>, event<e::Equals>, next_state<Ready>,
-                guard_division_by_zero,
-                [](auto& fsm, e::Equals) noexcept {
-                    fsm.total_ = 0.0;
-                    fsm.op_ = '!';
-                }),
-            make_aentry(from_state<Operand2>, event<e::Equals>, next_state<Ready>,
-                [](auto& fsm, e::Equals) noexcept {
-                    // calculate the current total
-                    auto const lhs{ufsm::get<Operand1>(fsm).eval()};
-                    auto const rhs{ufsm::get<Operand2>(fsm).eval()};
-                    fsm.update(rhs);
-                    std::cout << "Operand1 = " << lhs << "\n";
-                    std::cout << "Operand2 = " << rhs << "\n";
-                    std::cout << "total = " << fsm.total_ << "\n";
-                }
-            )
-        );
+        make_entry(ufsm_from_state<Ready>, ufsm_event<e::Digit_0>, ufsm_next_state<Operand1>),
+        make_entry(ufsm_from_state<Ready>, ufsm_event<e::Digit_1_9>, ufsm_next_state<Operand1>),
+        make_entry(ufsm_from_state<Ready>, ufsm_event<e::Point>, ufsm_next_state<Operand1>),
+        make_entry(ufsm_from_state<Ready>, ufsm_event<e::Op>, ufsm_next_state<OpEntered>, action_set_op),
+        make_entry(ufsm_from_state<Operand1>, ufsm_event<e::CE>, ufsm_next_state<Ready>),
+        make_aentry(ufsm_from_state<Operand1>,
+                    ufsm_event<e::Op>,
+                    ufsm_next_state<OpEntered>,
+                    [](auto& fsm, e::Op op) noexcept {
+                        fsm.total_ = ufsm::get<Operand1>(fsm).eval();
+                        fsm.op_ = op.key;
+                    }),
+        make_entry(ufsm_from_state<OpEntered>, ufsm_event<e::Digit_0>, ufsm_next_state<Operand2>),
+        make_entry(ufsm_from_state<OpEntered>, ufsm_event<e::Digit_1_9>, ufsm_next_state<Operand2>),
+        make_entry(ufsm_from_state<OpEntered>, ufsm_event<e::Point>, ufsm_next_state<Operand2>),
+        make_aentry(ufsm_from_state<OpEntered>, ufsm_event<e::Op>, ufsm_next_state<OpEntered>, action_set_op),
+        make_entry(
+        ufsm_from_state<Operand2>, ufsm_event<e::CE>, ufsm_next_state<Operand2> /* Operand2 cleared on entry */),
+        make_aentry(ufsm_from_state<Operand2>,
+                    ufsm_event<e::Op>,
+                    ufsm_next_state<OpEntered>,
+                    [](auto& fsm, e::Op op) noexcept {
+                        // calculate and display the current total
+                        auto const rhs{ufsm::get<Operand2>(fsm).eval()};
+                        fsm.update(rhs);
+                        fsm.op_ = op.key;
+                    }),
+        make_entry(ufsm_from_state<Operand2>,
+                   ufsm_event<e::Equals>,
+                   ufsm_next_state<Ready>,
+                   guard_division_by_zero,
+                   [](auto& fsm, e::Equals) noexcept {
+                       fsm.total_ = 0.0;
+                       fsm.op_ = '!';
+                   }),
+        make_aentry(
+        ufsm_from_state<Operand2>, ufsm_event<e::Equals>, ufsm_next_state<Ready>, [](auto& fsm, e::Equals) noexcept {
+            // calculate the current total
+            auto const lhs{ufsm::get<Operand1>(fsm).eval()};
+            auto const rhs{ufsm::get<Operand2>(fsm).eval()};
+            fsm.update(rhs);
+            std::cout << "Operand1 = " << lhs << "\n";
+            std::cout << "Operand2 = " << rhs << "\n";
+            std::cout << "total = " << fsm.total_ << "\n";
+        }));
     }
 };
 
@@ -288,17 +281,15 @@ struct Calculator {
     {
         using namespace ufsm;
         return make_transition_table(
-            make_entry(from_state<On>, event<e::C>, next_state<On>),
-            make_entry(from_state<On>, event<e::Off>, next_state<Off>),
-            make_entry(from_state<Off>, event<ufsm::AnyEventT>, next_state<Off>)
-        );
+        make_entry(ufsm_from_state<On>, ufsm_event<e::C>, ufsm_next_state<On>),
+        make_entry(ufsm_from_state<On>, ufsm_event<e::Off>, ufsm_next_state<Off>),
+        make_entry(ufsm_from_state<Off>, ufsm_event<ufsm::AnyEventT>, ufsm_next_state<Off>));
     }
 };
 
-template<typename SM, typename... Events>
-inline void send_events(SM&& fsm, Events&&... events) noexcept
+template<typename SM, typename... Events> inline void send_events(SM&& fsm, Events&&... events) noexcept
 {
-    ( ... , fsm.dispatch_event(std::forward<Events>(events)) );
+    (..., fsm.dispatch_event(std::forward<Events>(events)));
 }
 
 
@@ -349,10 +340,5 @@ int main()
     //     e::Op{},
     //     e::C{}
     // );
-    send_events(calculator,
-        e::Digit_1_9{4},
-        e::Op{'+'},
-        e::Digit_1_9{1},
-        e::Equals{}
-    );
+    send_events(calculator, e::Digit_1_9{4}, e::Op{'+'}, e::Digit_1_9{1}, e::Equals{});
 }

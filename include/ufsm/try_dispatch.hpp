@@ -3,17 +3,16 @@
 
 #include "traits.hpp"
 
-namespace ufsm
-{
-namespace back
-{
-namespace detail
-{
+namespace ufsm {
+namespace back {
+namespace detail {
 
 template<typename State, bool = IsFsm<std::decay_t<State>>>
 struct tryDispatch {
     template<typename Event>
-    constexpr inline void operator()(State const&, Event) const noexcept { /* nop */ }
+    constexpr inline void operator()(State const&, Event) const noexcept
+    { /* nop */
+    }
 };
 
 template<typename State>
@@ -25,11 +24,11 @@ struct tryDispatch<State, true> {
     }
 };
 
-} // namespace detail
+}  // namespace detail
 
-} // namespace back
+}  // namespace back
 
-} // namespace ufsm
+}  // namespace ufsm
 
 
-#endif // UFSM_TRY_DISPATCH_HPP_
+#endif  // UFSM_TRY_DISPATCH_HPP_

@@ -3,12 +3,9 @@
 
 #include "traits.hpp"
 
-namespace ufsm
-{
-namespace back
-{
-namespace detail
-{
+namespace ufsm {
+namespace back {
+namespace detail {
 template<typename T, typename Void, typename... Args>
 struct HasGuardT : std::false_type { };
 
@@ -16,8 +13,7 @@ template<typename T, typename... Args>
 using transition_guard_call = decltype(std::declval<T>().guard(std::declval<Args>()...));
 
 template<typename T, typename... Args>
-struct HasGuardT<T, void_t<transition_guard_call<T, Args...>>, Args...>
-: std::true_type { };
+struct HasGuardT<T, void_t<transition_guard_call<T, Args...>>, Args...> : std::true_type { };
 
 template<typename T, typename... Args>
 constexpr inline auto HasGuard{HasGuardT<T, void, Args...>::value};
@@ -28,7 +24,9 @@ struct TransitionGuardEvent { };
 struct TransitionGuardFsmEvent { };
 
 template<typename TTraits, typename = void_t<>>
-struct SelectTransitionGuardT { using type = NoTransitionGuard; };
+struct SelectTransitionGuardT {
+    using type = NoTransitionGuard;
+};
 
 template<typename TTraits>
 struct SelectTransitionGuardT<TTraits, void_t<transition_guard_call<TTraits>>> {
@@ -39,8 +37,7 @@ template<typename TTraits, typename Event, typename = void_t<>>
 struct SelectTransitionGuardEventT : SelectTransitionGuardT<TTraits> { };
 
 template<typename TTraits, typename Event>
-struct SelectTransitionGuardEventT<TTraits, Event, void_t<transition_guard_call<TTraits, Event>>>
-{
+struct SelectTransitionGuardEventT<TTraits, Event, void_t<transition_guard_call<TTraits, Event>>> {
     using type = TransitionGuardEvent;
 };
 
@@ -48,19 +45,18 @@ template<typename TTraits, typename FsmT, typename Event, typename = void_t<>>
 struct SelectTransitionGuardFsmEventT : SelectTransitionGuardEventT<TTraits, Event> { };
 
 template<typename TTraits, typename FsmT, typename Event>
-struct SelectTransitionGuardFsmEventT<TTraits, FsmT, Event,
-    void_t<transition_guard_call<TTraits, FsmT, Event>>>
-{
+struct SelectTransitionGuardFsmEventT<TTraits, FsmT, Event, void_t<transition_guard_call<TTraits, FsmT, Event>>> {
     using type = TransitionGuardFsmEvent;
 };
 
 template<typename TTraits, typename FsmT, typename Event>
-using SelectTransitionGuardSignature =
-    typename SelectTransitionGuardFsmEventT<TTraits, FsmT, Event>::type;
+using SelectTransitionGuardSignature = typename SelectTransitionGuardFsmEventT<TTraits, FsmT, Event>::type;
 
-} // namespace detail
+}  // namespace detail
 
-template<typename FsmT_, typename TTraits_, typename Event_,
+template<typename FsmT_,
+         typename TTraits_,
+         typename Event_,
          typename = detail::SelectTransitionGuardSignature<TTraits_, FsmT_, Event_>>
 struct fsmGuard {
     template<typename FsmT, typename TTraits, typename Event>
@@ -103,8 +99,8 @@ struct fsmGuard<FsmT_, TTraits_, Event_, detail::TransitionGuardFsmEvent> {
     }
 };
 
-} // namespace back
+}  // namespace back
 
-} // namespace ufsm
+}  // namespace ufsm
 
-#endif // UFSM_TRANSITION_GUARD_HPP
+#endif  // UFSM_TRANSITION_GUARD_HPP

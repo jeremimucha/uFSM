@@ -1,0 +1,33 @@
+include_guard()
+include(GNUInstallDirs)
+
+function(ConfigureOutputDirectories)
+    cmake_parse_arguments(arg "" "PATH" "" ${ARGN})
+
+    foreach(unparsed_arg IN LISTS arg_UNPARSED_ARGUMENTS)
+        message(WARNING "${ColorYellow}Unparsed argument: ${unparsed_arg}${ColorReset}")
+    endforeach()
+
+    if(NOT arg_PATH)
+        set(arg_PATH ${CMAKE_BINARY_DIR})
+    endif()
+
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${arg_PATH}/${CMAKE_INSTALL_BINDIR} PARENT_SCOPE)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${arg_PATH}/${CMAKE_INSTALL_LIBDIR} PARENT_SCOPE)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${arg_PATH}/${CMAKE_INSTALL_LIBDIR} PARENT_SCOPE)
+
+    get_property(isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+    if(isMultiConfig)
+        foreach(cfg IN LISTS CMAKE_CONFIGURATION_TYPES)
+            string(TOUPPER ${cfg} cfgUpper)
+            set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${cfgUpper} ${arg_PATH}/${CMAKE_INSTALL_BINDIR}/${cfg} PARENT_SCOPE)
+            set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${cfgUpper} ${arg_PATH}/${CMAKE_INSTALL_LIBDIR}/${cfg} PARENT_SCOPE)
+            set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${cfgUpper} ${arg_PATH}/${CMAKE_INSTALL_LIBDIR}/${cfg} PARENT_SCOPE)
+        endforeach()
+    else()
+        string(TOUPPER ${CMAKE_BUILD_TYPE} cfgUpper)
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${cfgUpper} ${arg_PATH}/${CMAKE_INSTALL_BINDIR} PARENT_SCOPE)
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${cfgUpper} ${arg_PATH}/${CMAKE_INSTALL_LIBDIR} PARENT_SCOPE)
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${cfgUpper} ${arg_PATH}/${CMAKE_INSTALL_LIBDIR} PARENT_SCOPE)
+    endif()
+endfunction()
