@@ -1,8 +1,13 @@
-include_guard()
+if((${CMAKE_SOURCE_DIR} STREQUAL ${PROJECT_SOURCE_DIR}) OR (NOT DEFINED ENABLE_DOXYGEN))
+  option(ENABLE_DOXYGEN "Build ALL Projects documentation" OFF)
+  message(STATUS "ENABLE_DOXYGEN = ${ENABLE_DOXYGEN}")
+endif()
+cmake_dependent_option(${PROJECT_NAME}_DOXYGEN "Build ${PROJECT_NAME} documentation" OFF "NOT ENABLE_DOXYGEN" ON)
+message(STATUS "${PROJECT_NAME}_DOXYGEN = ${${PROJECT_NAME}_DOXYGEN}")
+
 
 function(EnableDoxygen)
-  AssertOptionsDefined()
-  if(${OptDoxygen_})
+  if(${PROJECT_NAME}_DOXYGEN)
     set(DOXYGEN_CALLER_GRAPH YES)
     set(DOXYGEN_CALL_GRAPH YES)
     set(DOXYGEN_EXTRACT_ALL YES)

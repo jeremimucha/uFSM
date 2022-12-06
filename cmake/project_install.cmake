@@ -67,13 +67,19 @@ function(InstallProject)
         VERSION ${PROJECT_VERSION}
         COMPATIBILITY SameMajorVersion
     )
+
     set(InstallProject_INCLUDE_INSTALL_DIR include/)
     set(InstallProject_DEPENDENCIES ${arg_DEPENDENCIES})
+    set(_pathVars InstallProject_INCLUDE_INSTALL_DIR)
+    if(arg_DEPENDENCIES)
+        list(APPEND _pathVars InstallProject_DEPENDENCIES)
+    endif()
+
     configure_package_config_file(
         ${PACKAGE_CONFIG_TEMPLATE_FILE}
         ${CMAKE_CURRENT_BINARY_DIR}/${project_config_file}
         INSTALL_DESTINATION cmake
-        PATH_VARS InstallProject_DEPENDENCIES
+        PATH_VARS ${_pathVars}
     )
 
     install(
@@ -89,10 +95,10 @@ function(InstallProject)
             ${CMAKE_CURRENT_BINARY_DIR}/${project_config_version_file}
         DESTINATION cmake
     )
-    # export(
-    #     EXPORT ${${PROJECT_NAME}_export_targets}
-    #     FILE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake
-    #     NAMESPACE ${PROJECT_NAME}::
-    # )
-    # export(PACKAGE ${PROJECT_NAME})
+    export(
+        EXPORT ${${PROJECT_NAME}_export_targets}
+        FILE ${PROJECT_NAME}Targets.cmake
+        NAMESPACE ${PROJECT_NAME}::
+    )
+    export(PACKAGE ${PROJECT_NAME})
 endfunction()

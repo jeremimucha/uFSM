@@ -9,8 +9,6 @@ function(ConfigureAssertions)
         message(WARNING "${ColorYellow}Unparsed argument: ${unparsed_arg}${ColorReset}")
     endforeach()
 
-    AssertOptionsDefined()
-
     if(NOT arg_NAMESPACE)
     set(arg_NAMESPACE ${PROJECT_NAME})
     endif()

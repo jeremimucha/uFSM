@@ -10,7 +10,7 @@ ConfigureOutputDirectories()
 ConfigureGlobalFlags()
 ProjectConfigTarget(OUT ProjectConfig)
 ConfigureProjectInstallDirectories()
-ShowOptions()
+# ShowOptions()
 
 option(uFSM_BUILD_EXAMPLES "Build example binaries" ON)
 option(uFSM_BUILD_BENCHMARKS "Build benchmark binaries" ON)

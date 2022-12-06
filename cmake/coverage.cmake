@@ -1,6 +1,12 @@
-include_guard()
-
 include(${CMAKE_CURRENT_LIST_DIR}/colors.cmake)
+
+if((${CMAKE_SOURCE_DIR} STREQUAL ${PROJECT_SOURCE_DIR}) OR (NOT DEFINED ENABLE_COVERAGE))
+  option(ENABLE_COVERAGE "Generate ALL Projects code coverage" OFF)
+  message(STATUS "ENABLE_COVERAGE = ${ENABLE_COVERAGE}")
+endif()
+cmake_dependent_option(${PROJECT_NAME}_COVERAGE "Generate ${PROJECT_NAME} code coverage" OFF "NOT ENABLE_COVERAGE" ON)
+message(STATUS "${PROJECT_NAME}_COVERAGE = ${${PROJECT_NAME}_COVERAGE}")
+
 
 function(ConfigureCoverage)
   set(arg_options)
@@ -11,9 +17,7 @@ function(ConfigureCoverage)
       message(WARNING "${ColorYellow}Unparsed argument: ${unparsed_arg}${ColorReset}")
   endforeach()
 
-  AssertOptionsDefined()
-
-  if(${OptCoverage_})
+  if(${PROJECT_NAME}_COVERAGE)
     if(NOT arg_NAMESPACE)
       set(arg_NAMESPACE ${PROJECT_NAME})
     endif()

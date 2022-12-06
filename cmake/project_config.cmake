@@ -1,7 +1,23 @@
-include_guard()
+include(CMakeDependentOption)
+
+if((${CMAKE_SOURCE_DIR} STREQUAL ${PROJECT_SOURCE_DIR}))
+    option(ENABLE_DEVELOPER_MODE "Enable set of options suitable for development for ALL Projects" OFF)
+    cmake_dependent_option(ENABLE_WERROR "Enable warning as errors for ALL Projects" OFF "NOT ENABLE_DEVELOPER_MODE" ON)
+    cmake_dependent_option(ENABLE_TESTS "Build ALL Projects tests" OFF "NOT ENABLE_DEVELOPER_MODE" ON)
+    message(STATUS "ENABLE_DEVELOPER_MODE == ${ENABLE_DEVELOPER_MODE}")
+    message(STATUS "ENABLE_WERROR == ${ENABLE_WERROR}")
+    message(STATUS "ENABLE_TESTS == ${ENABLE_TESTS}")
+endif()
+cmake_dependent_option(${PROJECT_NAME}_DEVELOPER_MODE "Enable set of options suitable for development for ${PROJECT_NAME}" OFF "NOT ENABLE_DEVELOPER_MODE" ON)
+cmake_dependent_option(${PROJECT_NAME}_WERROR "Enable warning as errors for ${PROJECT_NAME}" OFF "NOT ${PROJECT_NAME}_DEVELOPER_MODE OR NOT ENABLE_WERROR" ON)
+cmake_dependent_option(${PROJECT_NAME}_TESTS "Build ${PROJECT_NAME} tests" OFF "NOT ${PROJECT_NAME}_DEVELOPER_MODE OR NOT ENABLE_TESTS" ON)
+message(STATUS "${PROJECT_NAME}_DEVELOPER_MODE == ${${PROJECT_NAME}_DEVELOPER_MODE}")
+message(STATUS "${PROJECT_NAME}_WERROR == ${${PROJECT_NAME}_WERROR}")
+message(STATUS "${PROJECT_NAME}_TESTS == ${${PROJECT_NAME}_TESTS}")
+
+
 include(${CMAKE_CURRENT_LIST_DIR}/assertions.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/colors.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/options.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/build_type.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/build_cache.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/coverage.cmake)
@@ -13,16 +29,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/project_install.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/sanitizers.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/static_analysis.cmake)
 
-if (NOT opt_options_defined_)
-message(STATUS "
-${ColorGreen}Configuring default project option names.
-To override the names include `options.cmake` and call
-    DefineOptions(PREFIX myPrefix)
-Before including project_config.cmake ${ColorReset}
-")
-
-    DefineOptions(PREFIX ${PROJECT_NAME})
-endif()
 
 macro(ConfigureGlobalFlags)
     set(CMAKE_CXX_STANDARD            20)
@@ -36,11 +42,8 @@ macro(ConfigureGlobalFlags)
         ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}
     )
     set(CMAKE_INSTALL_RPATH $ORIGIN $ORIGIN/${relativeRpath})
-    # set(CMAKE_INSTALL_RPATH $ORIGIN $ORIGIN/../lib)
 
-    if(${OptIpo_})
-        enable_ipo()
-    endif()
+    enable_ipo()
 
     if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         # add_link_options(-fuse-ld=gold)
@@ -60,8 +63,6 @@ function(ProjectConfigTarget)
     foreach(unparsed_arg IN LISTS arg_UNPARSED_ARGUMENTS)
         message(WARNING "${ColorYellow}Unparsed argument: ${unparsed_arg}${ColorReset}")
     endforeach()
-
-    AssertOptionsDefined()
 
     if(NOT arg_NAMESPACE)
         set(arg_NAMESPACE ${PROJECT_NAME})
