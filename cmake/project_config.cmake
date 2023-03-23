@@ -153,6 +153,9 @@ function(ProjectConfigTarget)
                                  # probably wanted
         # $<$<COMPILE_LANGUAGE:CXX>:-Wuseless-cast>           # warn if you perform a cast to the same type
         -Wmisleading-indentation # warn if indentation implies blocks where blocks do not exist
+        # warns about code that might break the strict aliasing rules that the compiler is using for optimization
+        -fstrict-aliasing
+        -Wstrict-aliasing
     )
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
